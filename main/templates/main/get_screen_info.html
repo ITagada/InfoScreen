@@ -7,11 +7,33 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>ГЛАВНАЯ ПЕРЕНАПРАВЛЕНИЯ</title>
-    <script src="{% static 'main/js/get_screen_info_script.js' %}"></script>
     <link rel="stylesheet" href="{% static 'main/css/stylesheet.css' %}">
 </head>
 <body>
-    <form method="post">{% csrf_token %}</form>
+    <script type="text/javascript">
+
+        let url = `ws://${window.location.host}/ws/socket-server/`
+
+        const mainSocket = new WebSocket(url)
+
+        mainSocket.onmessage = function(e){
+            let data = JSON.parse(e.data)
+            console.log('Data:', data);
+        }
+
+        mainSocket.onopen = function(e) {
+            console.log('WebSocket connection opened');
+        }
+
+        mainSocket.onerror = function(e) {
+            console.error('WebSocket error observed:', e);
+        }
+
+        mainSocket.onclose = function(e) {
+            console.log('WebSocket connection closed.');
+        }
+
+    </script>
     <div class="main">
       <div class="container-1">
         <div class="col-1-1">nonumes definiebas saepe dolorem discere iusto curabitur vocibus alia pertinax molestiae fermentum senectus sit quis bibendum tincidunt in efficitur corrumpit consequat efficitur cetero</div>
