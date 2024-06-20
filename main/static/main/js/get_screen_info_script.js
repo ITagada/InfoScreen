@@ -6,11 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 let screenWidth = window.screen.width;
                 let screenHeight = window.screen.height;
 
+                console.log(screenWidth);
+                console.log(screenHeight);
+
                 const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
                 if (csrfTokenElement) {
                     const csrfToken = csrfTokenElement.value;
 
-                    fetch('/get_screen_info/', {
+                    fetch('', {
                         method: "POST",
                         headers: {
                             'Content-Type': 'application/json',

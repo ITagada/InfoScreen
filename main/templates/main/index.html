@@ -12,19 +12,5 @@
 <body>
     <form method="post">{% csrf_token %}</form>
     <h1>Let's Try</h1>
-
-    <div id="countdown-timer"></div>
-
-    <script type="text/javascript">
-        let remainigSeconds = 20;
-        const intervalID = setInterval(() => {
-            document.getElementById('countdown-timer').textContent = `Переход на новую страницу через ${remainigSeconds--} сек`;
-            if (remainigSeconds < 0) {
-                clearInterval(intervalID);
-                window.location = 'http://127.0.0.1:8000/get_screen_info/'
-            }
-        }, 1000)
-    </script>
-
 </body>
 </html>
