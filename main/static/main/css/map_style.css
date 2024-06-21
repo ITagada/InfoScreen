@@ -1,0 +1,61 @@
+.route {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 80%;
+    height: 10px;
+    background: #9460aa;
+}
+
+.route .completed-segment {
+    position: absolute;
+    height: 100%;
+    background: gray;
+    transition: width 0.5s;
+}
+
+.stop {
+    width: 20px;
+    height: 20px;
+    background: #9460aa;
+    border-radius: 50%;
+    position: absolute;
+    top: -5px;
+    transform: translateX(-50%);
+    transition: background 0.3s, border 0.3s;
+}
+
+.completed {
+    background: gray;
+}
+
+.highlight {
+    background: #9460aa;
+    border: 0.5cap solid #9460aa;
+}
+
+.label {
+    transform: rotate(60deg);
+    transform-origin: top left;
+    transition: color 0.3s, transform 0.1s;
+}
+
+.label-wrapper {
+    position: absolute;
+    top: 30px;
+    transform-origin: top left;
+    white-space: nowrap;
+}
+
+.completed-label {
+    color: gray;
+}
+
+.highlight-label {
+    transform: rotate(30deg) scale(1.5);
+}
+
+.container-3 {
+    flex: 1 1 20%;
+    height: 100%;
+}
