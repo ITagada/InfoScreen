@@ -1,6 +1,7 @@
 html, body {
-    height: 100%;
     margin: 0;
+    padding: 0;
+    height: 99vh;
     display: flex;
 }
 
@@ -8,45 +9,56 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-grow: 1;
 }
 
 .container-1 {
     background: #adcad6;
-    flex: 1 1 20%;
+    flex: 1 1 20vw;
     flex-direction: column;
-    height: 100%;
+    height: 99vh;
+}
+
+.col-1-1-1 {
+    height: 20%;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 h2 {
+    height: 100%;
     color: #15779e;
     text-align: center;
 }
 
 .col-1-1 {
     flex: 1;
+    height: 80%;
     display: flex;
     justify-content: center;
     text-align: center;
     align-items: center;
-    height: 100%;
 }
 
 .container-2 {
     margin: 0px 5px 0px 5px;
-    flex: 1 1 60%;
-    height: 100%;
+    flex: 1 1 60vw;
+    height: 99vh;
+    flex-direction: column;
 }
 
 .col-2-1 {
     color: white;
     background: #9460aa;
-    margin-bottom: 10px;
+    margin-bottom: 1.5vh;
     flex: 1;
     display: flex;
     justify-content: center;
     text-align: center;
     align-items: center;
-    height: 40%;
+    height: 39%;
 }
 
 .col-2-2 {
@@ -60,10 +72,21 @@ h2 {
     font-family: Arial, sans-serif;
 }
 
+.container-3 {
+    flex: 1 1 20vw;
+    height: 99vh;
+    margin: 0;
+    flex-direction: column;
+}
+
 .col-3-1 {
     background: #adcad6;
-    height: 40%;
-    margin-bottom: 10px;
+    margin-bottom: 1.5vh;
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    height: 39%;
 }
 
 .col-3-1-1 {
@@ -91,5 +114,5 @@ h2 {
     justify-content: center;
     align-items: center;
     text-align: center;
-    height: 59%;
+    height: 60%;
 }
