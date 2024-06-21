@@ -11,53 +11,32 @@
     <link rel="stylesheet" href="{% static 'main/css/stylesheet.css' %}">
 </head>
 <body>
-    {% if sw == 1920 and sh == 1080 %}
-        <script type="text/javascript">
-
-            let url = `ws://${window.location.host}/ws/socket-server/`
-    
-            const mainSocket = new WebSocket(url)
-    
-            mainSocket.onmessage = function(e){
-                let data = JSON.parse(e.data)
-                console.log('Data:', data);
-            }
-    
-            mainSocket.onopen = function(e) {
-                console.log('WebSocket connection opened');
-            }
-    
-            mainSocket.onerror = function(e) {
-                console.error('WebSocket error observed:', e);
-            }
-    
-            mainSocket.onclose = function(e) {
-                console.log('WebSocket connection closed.');
-            }
-
-        </script>
-        <div class="main">
-          <div class="container-1">
-              <h2>Пересадки / Change here for</h2>
-              <div class="col-1-1">
+    <script src="{% static 'main/js/websocket_connection.js' %}"></script>
+    <div class="main">
+        <div class="container-1">
+            <h2>Пересадки / Change here for</h2>
+            <div class="col-1-1">
                 nonumes definiebas saepe dolorem discere iusto curabitur vocibus 
                 alia pertinax molestiae fermentum senectus sit quis bibendum 
                 tincidunt in efficitur corrumpit consequat efficitur cetero
-              </div>
-          </div>
-            <div class="container-2">
+            </div>
+        </div>
+        <div class="container-2">
             <div class="col-2-1">
                 nonumes definiebas saepe dolorem discere iusto curabitur vocibus 
                 alia pertinax molestiae fermentum senectus sit quis bibendum 
                 tincidunt in efficitur corrumpit consequat efficitur cetero
             </div>
             <div class="col-2-2">
-                nonumes definiebas saepe dolorem discere iusto curabitur vocibus 
-                alia pertinax molestiae fermentum senectus sit quis bibendum 
-                tincidunt in efficitur corrumpit consequat efficitur cetero
+                <link rel="stylesheet" href="{% static 'main/css/map_style.css' %}">
+                <div class="route" id="route">
+                    <div class="completed-segment" id="completed-segment"></div>
+                </div>
+                <script src="{% static 'main/js/get_movement_animation.js' %}">
+                </script>
             </div>
-          </div>
-            <div class="container-3">
+        </div>
+        <div class="container-3">
             <div class="col-3-1">
                 <div class="col-3-1-1">
                     <h2>Поезд следует до остановки / Terminal station:</h2>
@@ -66,41 +45,13 @@
                     nonumes definiebas saepe dolorem discere iusto curabitur vocibus
                     alia pertinax molestiae fermentum senectus sit quis bibendum 
                     tincidunt in efficitur corrumpit consequat efficitur cetero
-                    </div>
+                </div>
             </div>
             <div class="col-3-2">
                 nonumes definiebas saepe dolorem discere iusto curabitur vocibus 
                 alia pertinax molestiae fermentum senectus sit quis bibendum 
                 tincidunt in efficitur corrumpit consequat efficitur cetero
             </div>
-          </div>
         </div>
-    {% else %}
-        <h1>ANOTHER CASE</h1>
-        <script type="text/javascript">
-            
-            let url = `ws://${window.location.host}/ws/socket-server/`
-        
-            const mainSocket = new WebSocket(url)
-        
-            mainSocket.onmessage = function(e){
-                let data = JSON.parse(e.data)
-                console.log('Data:', data);
-            }
-        
-            mainSocket.onopen = function(e) {
-                console.log('WebSocket connection opened');
-            }
-        
-            mainSocket.onerror = function(e) {
-                console.error('WebSocket error observed:', e);
-            }
-        
-            mainSocket.onclose = function(e) {
-                console.log('WebSocket connection closed.');
-            }
-                
-        </script>
-    {% endif %}
 </body>
 </html>

@@ -24,19 +24,15 @@ def index(request):
             return JsonResponse({'screen_width': screen_width, 'screen_height': screen_height})
         except json.JSONDecodeError:
             return JsonResponse({'status': 'fail1', 'message': 'Invalid JSON1'}, status=400)
+    if (request.session.get('screen_width') == 1920) and (
+            request.session.get('screen_height') == 1080):
+        return redirect('get_screen_info')
+    else: return redirect('get_screen_info2')
 
-    return redirect('get_screen_info')
 
 
 def get_screen_info(request):
-    sw = request.session.get('screen_width')
-    sh = request.session.get('screen_height')
-    logger.info(f"Current screen width={sw} and screen height={sh}")
-    context = {
-        'sw': sw,
-        'sh': sh
-    }
-    return render(request, 'main/get_screen_info.html', context)
+    return render(request, 'main/get_screen_info.html')
 
 def get_screen_info2(request):
     return render(request, 'main/get_screen_info2.html')
