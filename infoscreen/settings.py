@@ -116,6 +116,7 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+"""Установка инструмента логирования и его настройка"""
 
 LOGGING = {
     'version': 1,

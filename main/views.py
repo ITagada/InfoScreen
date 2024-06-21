@@ -16,6 +16,9 @@ def index(request):
             screen_width = data.get('screen_width')
             screen_height = data.get('screen_height')
 
+            """Помещаем данные фронтенда в сессионные данные для их 
+            дальнейшей обработки"""
+
             request.session['screen_width'] = screen_width
             request.session['screen_height'] = screen_height
 
@@ -24,6 +27,9 @@ def index(request):
             return JsonResponse({'screen_width': screen_width, 'screen_height': screen_height})
         except json.JSONDecodeError:
             return JsonResponse({'status': 'fail1', 'message': 'Invalid JSON1'}, status=400)
+
+    """Извлекаем сессионные данные и обрабатываем"""
+
     if (request.session.get('screen_width') == 1920) and (
             request.session.get('screen_height') == 1080):
         return redirect('get_screen_info')

@@ -1,3 +1,5 @@
+//Скрипт установления сокет-соединения
+
 let url = `ws://${window.location.host}/ws/socket-server/`
 
             const mainSocket = new WebSocket(url)

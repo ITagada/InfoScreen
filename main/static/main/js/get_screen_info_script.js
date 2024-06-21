@@ -1,4 +1,4 @@
-
+//Скрипт получения информации о конечном устройстве
 
 document.addEventListener('DOMContentLoaded', () => {
 
