@@ -10,6 +10,7 @@ html, body {
     justify-content: center;
     align-items: center;
     flex-grow: 1;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .container-1 {
@@ -55,9 +56,11 @@ h2 {
     margin-bottom: 1.5vh;
     flex: 1;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     text-align: center;
     align-items: center;
+    font-size: 2em;
     height: 39%;
 }
 
@@ -69,6 +72,7 @@ h2 {
     text-align: center;
     align-items: center;
     height: 60%;
+    font-size: 0.8em;
     font-family: Arial, sans-serif;
 }
 
