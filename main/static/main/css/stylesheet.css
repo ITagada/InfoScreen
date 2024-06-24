@@ -87,28 +87,101 @@ h2 {
     background: #adcad6;
     margin-bottom: 1.5vh;
     flex: 1;
+    position: relative;
     justify-content: center;
-    text-align: center;
+    text-align: left;
     align-items: center;
     height: 39%;
 }
 
 .col-3-1-1 {
     flex: 1;
-    height: 20%;
+    position: absolute;
+    top: 0px;
+    height: 30%;
+    color: #15779e;
     display: flex;
     justify-content: center;
+    flex-direction: column;
     text-align: center;
+}
+
+.col-3-1-1-1 {
+    flex: 1;
+    height: 50%;
+    display: flex;
+    justify-content: left;
+    text-align: left;
     align-items: center;
+}
+
+.col-3-1-1-2 {
+    flex: 1;
+    height: 50%;
+    display: flex;
+    justify-content: left;
+    text-align: left;
+    font-weight: bold;
+    font-size: 1.5em;
 }
 
 .col-3-1-2 {
     flex: 1;
-    height: 80%;
+    height: 70%;
+    width: 50%;
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    text-align: start;
+    align-items: center;
+}
+
+.time {
+    flex: 0;
+    justify-content: left;
+    text-align: left;
+    font-weight: bold;
+    font-size: 2.4em;
+}
+
+.col-3-1-3 {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    flex: 1;
+    height: 70%;
+    width: 50%;
+    display: flex;
+    font-size: 1em;
+}
+
+.temperature {
+    height: 30%;
+    top: 0px;
+    flex: 1;
     display: flex;
     justify-content: center;
     text-align: center;
-    align-items: center;
+}
+
+.inside {
+    position: absolute;
+    height: 70%;
+    width: 50%;
+    bottom: 0px;
+    left: 0px;
+}
+
+
+.outside {
+    position: absolute;
+    height: 70%;
+    width: 50%;
+    bottom: 0px;
+    right: 0px;
 }
 
 .col-3-2 {

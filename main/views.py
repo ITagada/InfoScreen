@@ -59,7 +59,8 @@ def get_screen_info(request):
     context = {
         'current_stop': curent_stop,
         'next_stop': next_stop,
-        'stops': stops
+        'stops': stops,
+        'final_stop': stops[-1],
     }
     return render(request, 'main/get_screen_info.html', context)
 
