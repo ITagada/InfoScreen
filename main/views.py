@@ -24,6 +24,8 @@ stops = [
     { "name": "Третьяковская", "name2": "Tret'yakovskaya", "position": 100 },
 ]
 
+temperature = {'inside': 22, 'outside': 31}
+
 def index(request):
     if request.method == "POST":
         try:
@@ -31,21 +33,12 @@ def index(request):
             screen_width = data.get('screen_width')
             screen_height = data.get('screen_height')
 
-            """Помещаем данные фронтенда в сессионные данные для их 
-            дальнейшей обработки"""
-
-            request.session['screen_width'] = screen_width
-            request.session['screen_height'] = screen_height
-
             logger.info(f"Saved screen width={screen_width} and screen height={screen_height}")
 
             return JsonResponse({'screen_width': screen_width, 'screen_height': screen_height})
         except json.JSONDecodeError:
             return JsonResponse({'status': 'fail1', 'message': 'Invalid JSON1'}, status=400)
 
-    """Извлекаем сессионные данные и обрабатываем"""
-    request.session['current_stop'] = stops[0]['name']
-    request.session['next_stop'] = stops[1]['name']
     if (request.session.get('screen_width') == 1920) and (
             request.session.get('screen_height') == 1080):
         return redirect('get_screen_info')
@@ -54,11 +47,8 @@ def index(request):
 
 
 def get_screen_info(request):
-    curent_stop = request.session.get('current_stop')
-    next_stop = request.session.get('next_stop')
     context = {
-        'current_stop': curent_stop,
-        'next_stop': next_stop,
+        'temperature': temperature,
         'stops': stops,
         'final_stop': stops[-1],
     }

@@ -1,6 +1,6 @@
 .route {
     display: flex;
-    align-items: center;
+    top: -15%;
     position: relative;
     width: 80%;
     height: 10px;
@@ -20,7 +20,7 @@
     background: #9460aa;
     border-radius: 50%;
     position: absolute;
-    top: -5px;
+    top: -10px;
     transform: translateX(-50%);
     transition: background 0.3s, border 0.3s;
 }
@@ -52,6 +52,6 @@
 }
 
 .highlight-label {
-    transform: rotate(30deg) scale(1.5);
+    transform: rotate(30deg) scale(1.3);
 }
 

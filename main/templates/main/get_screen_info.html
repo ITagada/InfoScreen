@@ -53,8 +53,15 @@
                     <div class="temperature">
                         температура воздуха: 
                     </div>
-                    <div class="inside"></div>
-                    <div class="outside"></div>
+                    <div class="inside">
+                        <div class="insidehead">в салоне / salon</div>
+                        <div class="insidebody">{{ temperature.inside }}&deg;</div>
+                    </div>
+                    <div class="outside">
+                        <div class="outsidehead">на улице / outdoor</div>
+                        <div class="outsidebody">
+                            {{ temperature.outside }}&deg;</div>
+                    </div>
                 </div>
             </div>
             <div class="col-3-2">
