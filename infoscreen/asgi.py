@@ -9,7 +9,7 @@ from main import routing
 
 """ Тут происходит запуск сокета """
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'infoscreen.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'video.settings')
 
 application = ProtocolTypeRouter({
     'http': get_asgi_application(),

@@ -1,8 +1,10 @@
-import os.path
 import logging
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 SECRET_KEY = 'django-insecure-vbp@#i_y%^shl6@inn^1%ujdrftw^4xa34fgvv0@7#y9*d@+a_'
 
@@ -69,7 +71,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'infoscreen.wsgi.application'
+WSGI_APPLICATION = 'video.wsgi.application'
 
 
 DATABASES = {
@@ -107,10 +109,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = BASE_DIR / 'static'
 
 STATICFILES_DIRS = [
-    BASE_DIR.joinpath('main/static'),
+    BASE_DIR / 'main/static',
 ]
 
 
@@ -131,7 +133,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'infoscreen/debug.log',
+            'filename': BASE_DIR / 'infoscreen/debug.log',
             'formatter': 'verbose',
         },
     },
