@@ -49,8 +49,21 @@ document.addEventListener('DOMContentLoaded', function() {
             videoContainerCreated = true;
         }
     }
+        function removeVideoElement() {
+            if (videoContainerCreated) {
+                videoElement.pause();
+                videoElement.remove();
+                videoElement = null;
+                videoContainerCreated = false;
+                videoStarted = false;
+            }
+    }
     document.addEventListener('pointerup', function (){
-        createVideoElement();
+        if (!videoContainerCreated) {
+            createVideoElement();
+        } else {
+            removeVideoElement();
+        }
     });
 
     setInterval(function () {
