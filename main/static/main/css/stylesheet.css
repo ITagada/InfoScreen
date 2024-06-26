@@ -179,6 +179,7 @@ h2 {
 
 .insidehead {
     display: flex;
+    min-height: 20%;
     justify-content: center;
     text-align: center;
 }
@@ -201,6 +202,7 @@ h2 {
 
 .outsidehead {
     display: flex;
+    min-height: 20%;
     justify-content: center;
     text-align: center;
 }

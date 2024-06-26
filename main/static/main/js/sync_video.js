@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
             videoElement.src = '/media/video/sample-30s.mp4';
             videoElement.controls = true;
 
-            videoElement.addEventListener('click', function () {
+            videoElement.addEventListener('pointerup', function () {
                 if (!videoStarted) {
                     socket.send(JSON.stringify({
                         'command': 'start',
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             videoContainerCreated = true;
         }
     }
-    document.addEventListener('click', function (){
+    document.addEventListener('pointerup', function (){
         createVideoElement();
     });
 
