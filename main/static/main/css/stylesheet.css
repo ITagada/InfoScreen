@@ -7,6 +7,7 @@ html, body {
 
 .main {
     display: flex;
+    width: 100vw;
     justify-content: center;
     align-items: center;
     flex-grow: 1;
@@ -15,13 +16,14 @@ html, body {
 
 .container-1 {
     background: #adcad6;
+    position: relative;
     flex: 1 1 20vw;
     flex-direction: column;
     height: 99vh;
 }
 
 .col-1-1-1 {
-    height: 20%;
+    height: 15%;
     flex: 1;
     display: flex;
     justify-content: center;
@@ -35,8 +37,17 @@ h2 {
 }
 
 .col-1-1 {
-    flex: 1;
-    height: 80%;
+    height: 85%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    text-align: center;
+    align-items: center;
+}
+
+.transition {
+    position: relative;
+    height: 15%;
     display: flex;
     justify-content: center;
     text-align: center;
@@ -230,6 +241,7 @@ h2 {
 .video {
     max-width: 100%;
     max-height: 100%;
+    min-height: 100%;
     object-fit: contain;
     position: absolute;
     top: 50%;

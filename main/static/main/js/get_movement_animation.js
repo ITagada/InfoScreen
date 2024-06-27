@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     var routeElement = document.getElementById('route');
     var completedSegment = document.getElementById('completed-segment');
+    var transitionsContainer = document.getElementById('col-1-1');
 
     stops.forEach(function(stop, index) {
         var stopElement = document.createElement('div');
@@ -67,6 +68,24 @@ document.addEventListener('DOMContentLoaded', function(){
         } else {
             nextStopElement.innerText = 'Следующая остановка ' + stops[(currentIndex + 1) % stops.length].name +
                 " / Next station is " +stops[(currentIndex + 1) % stops.length].name2;
+        }
+        displayTransitions(stops[currentIndex].transitions)
+    }
+
+    function displayTransitions(transitions) {
+        transitionsContainer.innerHTML = '';
+        if (transitions && transitions.length > 0) {
+            transitions.forEach(function (transition){
+               var transitionElement = document.createElement('div');
+               transitionElement.className = 'transition';
+               transitionElement.innerText = `${transition.lane} | ${transition.stantion} / ${transition.stantion2}`;
+               transitionsContainer.appendChild(transitionElement);
+            });
+        } else {
+            var noTransitionElement = document.createElement('div');
+            noTransitionElement.className = 'picture';
+            noTransitionElement.innerText = 'THIS IS YOUR PICTURE';
+            transitionsContainer.appendChild(noTransitionElement);
         }
     }
 

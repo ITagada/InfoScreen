@@ -14,14 +14,26 @@ stops = [
     { "name": "Новокосино", "name2": "Novokosino", "position": 0 },
     { "name": "Новогиреево", "name2": "Novogireevo", "position": 14.2 },
     { "name": "Перово", "name2": "Perovo", "position": 28.4 },
-    { "name": "Шоссе Энтузиастов", "name2": "Enthusiasts Highway", "position":
-        42.6 },
-    { "name": "Авиамоторная", "name2": "Aviamotornaya street", "position":
-        56.8 },
-    { "name": "Площадь Ильича", "name2": "Il'itch Square", "position": 71.2 },
-    { "name": "Марксистская", "name2": "Marksistskaya street", "position":
-        85.4 },
-    { "name": "Третьяковская", "name2": "Tret'yakovskaya", "position": 100 },
+    { "name": "Шоссе Энтузиастов", "name2": "Enthusiasts Highway",
+      "position": 42.6 },
+    { "name": "Авиамоторная", "name2": "Aviamotornaya street", "position": 56.8 },
+    { "name": "Площадь Ильича", "name2": "Il'itch Square", "transitions": [
+        {"stantion": "Римская", "stantion2": "Rimskaya", "lane": 10,
+         "lane_name": "Люблинско-Дмитровская"},
+    ], "position": 71.2 },
+    { "name": "Марксистская", "name2": "Marksistskaya street", "transitions":[
+        {"stantion": "Таганская", "stantion2": "Taganskaya", "lane": 5,
+         "lane_name": "Кольцевая линия"},
+        {"stantion": "Таганская", "stantion2": "Taganskaya", "lane": 7,
+         "lane_name": "Таганско-Краснопресненская"}
+    ], "position": 85.4 },
+    { "name": "Третьяковская", "name2": "Tret'yakovskaya", "transitions": [
+        {"stantion": "Новокузнетская", "stantion2": "Novokuznetskaya",
+         "lane": 2,
+         "lane_name": "Замоскворецкая"},
+        {"stantion": "Третьяковская", "stantion2": "Tret'yakovskaya", "lane": 6,
+         "lane_name": "Калужско-Рижская"},
+    ], "position": 100 },
 ]
 
 temperature = {'inside': 22, 'outside': 31}
