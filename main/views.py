@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.propagate = True
 
-
+# Иммитация распаршенных данных от главного сервера
 stops = [
     { "name": "Новокосино", "name2": "Novokosino", "position": 0 },
     { "name": "Новогиреево", "name2": "Novogireevo", "position": 14.2 },
@@ -36,8 +36,12 @@ stops = [
     ], "position": 100 },
 ]
 
+# Иммитация распаршенных данных от главного сервера
 temperature = {'inside': 22, 'outside': 31}
 
+# Функция обработчик стартового экрана, которая принимает в себя данные о
+# подключенных устройствах и, исходя из этого перенаправляет на ту или иную
+# страницу
 def index(request):
     if request.method == "POST":
         try:
@@ -57,7 +61,8 @@ def index(request):
     else: return redirect('get_screen_info2')
 
 
-
+# Функция обработчик страницы, передает в неё контекст в виде распаршенных
+# данных от главного сервера
 def get_screen_info(request):
     context = {
         'temperature': temperature,
@@ -66,5 +71,7 @@ def get_screen_info(request):
     }
     return render(request, 'main/get_screen_info.html', context)
 
+# Функция обработчик страницы, передает в неё контекст в виде распаршенных
+# данных от главного сервера
 def get_screen_info2(request):
     return render(request, 'main/get_screen_info2.html')
