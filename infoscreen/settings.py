@@ -10,7 +10,7 @@ SECRET_KEY = 'django-insecure-vbp@#i_y%^shl6@inn^1%ujdrftw^4xa34fgvv0@7#y9*d@+a_
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.1.55', '127.0.0.1', 'localhost', '0.0.0.0']
 
 """ Обязательные настройки: добавление приложений channels, daphne. 
  Так же нужно прописать ASGI_APPLICATION для какого приложения будет доступно асинхронная структура"""
@@ -71,7 +71,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'video.wsgi.application'
+# WSGI_APPLICATION = 'video.wsgi.application'
 
 
 DATABASES = {
@@ -107,7 +107,7 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 STATIC_ROOT = BASE_DIR / 'static'
 

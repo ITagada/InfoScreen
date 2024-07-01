@@ -1,9 +1,9 @@
 .route {
     display: flex;
-    top: -15%;
+    top: -25%;
     position: relative;
-    width: 80%;
-    height: 2vh;
+    width: 82%;
+    height: 1.5vh;
     background: #9460aa;
 }
 
@@ -15,8 +15,8 @@
 }
 
 .stop {
-    width: 20px;
-    height: 20px;
+    width: 3vh;
+    height: 3vh;
     background: #9460aa;
     border-radius: 50%;
     position: absolute;
@@ -38,13 +38,17 @@
     transform: rotate(60deg);
     transform-origin: top left;
     transition: color 0.3s, transform 0.3s;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .label-wrapper {
     position: absolute;
     top: 30px;
     transform-origin: top left;
-    white-space: nowrap;
+    white-space: ;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .completed-label {

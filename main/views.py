@@ -58,7 +58,7 @@ def index(request):
     if (request.session.get('screen_width') == 1920) and (
             request.session.get('screen_height') == 1080):
         return redirect('get_screen_info')
-    else: return redirect('get_screen_info2')
+    else: return redirect('get_screen_info')
 
 
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных
