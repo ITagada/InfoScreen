@@ -17,7 +17,16 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         pass
 
     async def receive(self, text_data):
-        pass
+        text_data_json = json.loads(text_data)
+        command = text_data_json.get('command')
+
+        if command == 'update_route':
+            await self.send_command_to_client()
+
+    async def send_command_to_client(self):
+        await self.send(text_data=json.dumps({
+            'command': 'update_route',
+        }))
 
 
 

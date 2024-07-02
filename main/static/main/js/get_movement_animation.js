@@ -173,11 +173,32 @@ document.addEventListener('DOMContentLoaded', function(){
         }, 10)
     }
 
-    // Имитация поступающих команд в виде интервала действий
-    setInterval(function() {
-        currentIndex = (currentIndex + 1) % stops.length;
-        updateRoute();
-    }, 2000);
+    let url = `ws://${window.location.host}/ws/socket-server/`
+    const mainSocket = new WebSocket(url);
+
+    mainSocket.onmessage = function(e) {
+        let data = JSON.parse(e.data);
+        console.log('Data:', data);
+
+        // Проверка команды и обновление маршрута
+        if (data.command === 'update_route') {
+            currentIndex = (currentIndex + 1) % stops.length;
+            updateRoute();
+        }
+    };
+
+    mainSocket.onopen = function(e) {
+        console.log('WebSocket connection opened');
+    };
+
+    mainSocket.onerror = function(e) {
+        console.error('WebSocket error observed:', e);
+    };
+
+    mainSocket.onclose = function(e) {
+        console.log('WebSocket connection closed.');
+    };
+
 
     updateRoute();
 });

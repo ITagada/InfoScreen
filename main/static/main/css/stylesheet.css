@@ -251,7 +251,7 @@ h2 {
     display: flex;
     justify-content: center;
     align-items: start;
-    font-size: clamp(0.2rem, 1vw + 1rem, 4rem);
+    font-size: clamp(0.2rem, 1vw + 1rem, 3rem);
     font-weight: bold;
 }
 
@@ -275,7 +275,7 @@ h2 {
     display: flex;
     justify-content: center;
     align-items: start;
-    font-size: clamp(0.2rem, 1vw + 1rem, 4rem);
+    font-size: clamp(0.2rem, 1vw + 1rem, 3rem);
     font-weight: bold;
 }
 
