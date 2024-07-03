@@ -5,7 +5,16 @@ from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 
 class ScreenConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.group_name = None
+
     async def connect(self):
+        self.group_name = 'route_updates'
+        await self.channel_layer.group_add(
+            self.group_name,
+            self.channel_name
+        )
         await self.accept()
 
         await self.send(text_data=json.dumps({
@@ -14,7 +23,10 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         }))
 
     async def disconnect(self, close_code):
-        pass
+        await self.channel_layer.group_discard(
+            self.group_name,
+            self.channel_name
+        )
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -23,9 +35,10 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         if command == 'update_route':
             await self.send_command_to_client()
 
-    async def send_command_to_client(self):
+    async def send_command_to_client(self, event):
+        command = event.get('command')
         await self.send(text_data=json.dumps({
-            'command': 'update_route',
+            'command': command,
         }))
 
 

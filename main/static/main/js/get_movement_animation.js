@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function(){
         console.log('Data:', data);
 
         // Проверка команды и обновление маршрута
-        if (data.command === 'update_route') {
+        if (data.command === "route_update") {
             currentIndex = (currentIndex + 1) % stops.length;
             updateRoute();
         }

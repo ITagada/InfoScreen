@@ -2,8 +2,10 @@
 import json
 import logging
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import JsonResponse
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -39,26 +41,48 @@ stops = [
 # Иммитация распаршенных данных от главного сервера
 temperature = {'inside': 22, 'outside': 31}
 
+global_sw = None
+global_sh = None
+
 # Функция обработчик стартового экрана, которая принимает в себя данные о
 # подключенных устройствах и, исходя из этого перенаправляет на ту или иную
 # страницу
 def index(request):
+    global global_sw, global_sh
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            screen_width = data.get('screen_width')
-            screen_height = data.get('screen_height')
+            global_sw = data.get('screen_width')
+            global_sh = data.get('screen_height')
 
-            logger.info(f"Saved screen width={screen_width} and screen height={screen_height}")
+            logger.info(f"Received screen width={global_sw} and screen "
+                        f"height={global_sh}")
 
-            return JsonResponse({'screen_width': screen_width, 'screen_height': screen_height})
+            if global_sw == 1920 and global_sh == 1080:
+                return JsonResponse({'redirect_url': 'get_screen_info'})
+            elif global_sw == 3840 and global_sh == 456:
+                return JsonResponse({'redirect_url': 'get_screen_info'})
+            else:
+                return JsonResponse({'redirect_url': 'get_screen_info2'})
         except json.JSONDecodeError:
-            return JsonResponse({'status': 'fail1', 'message': 'Invalid JSON1'}, status=400)
+            return JsonResponse({'status': 'fail1', 'message': 'Invalid JSON'}, status=400)
 
-    if (request.session.get('screen_width') == 1920) and (
-            request.session.get('screen_height') == 1080):
-        return redirect('get_screen_info')
-    else: return redirect('get_screen_info')
+    else:
+        return render(request, 'main/index.html')
+
+
+
+
+def send_update_route_command(request):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        'route_updates',
+        {
+            'type': 'send_command_to_client',
+            'command': 'route_update'
+        }
+    )
+    return render(request, 'main/send-update-route-command.html')
 
 
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных

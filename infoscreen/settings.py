@@ -53,6 +53,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIES = 'sessionid'
+
 ROOT_URLCONF = 'infoscreen.urls'
 
 TEMPLATES = [
