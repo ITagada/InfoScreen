@@ -28,7 +28,9 @@
                 <div class="route" id="route">
                     <div class="completed-segment" id="completed-segment"></div>
                 </div>
-                {{ stops|json_script:"stops-data" }}
+                <div class="stops-data" id="stops-data">
+                    {{ stops|json_script:"stops-data" }}    
+                </div>
             </div>
         </div>
         <div class="container-3">

@@ -11,7 +11,7 @@
     <button id="update-route-button">UPDATE ROUTE</button>
 
     <script>
-        document.getElementById('update-route-button').addEventListener
+         document.getElementById('update-route-button').addEventListener
         ('click', function () {
             fetch('/send-update-route-command/')
                 .then(response => response.text())

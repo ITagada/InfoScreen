@@ -75,13 +75,28 @@ def index(request):
 
 def send_update_route_command(request):
     channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        'route_updates',
-        {
-            'type': 'send_command_to_client',
-            'command': 'route_update'
-        }
-    )
+
+    current_index = request.session.get('current_index', 0)
+    next_index = (current_index + 1) % len(stops)
+
+    current_stop = stops[current_index]
+    next_stop = stops[next_index]
+
+    request.session['current_index'] = next_index
+    request.session.save()
+
+    try:
+        async_to_sync(channel_layer.group_send)(
+            'route_updates',
+            {
+                'type': 'send_command_to_client',
+                'command': 'update_route',
+                'current_stop': current_stop,
+                'next_stop': next_stop,
+            }
+        )
+    except Exception as e:
+        return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
 
 
@@ -89,9 +104,9 @@ def send_update_route_command(request):
 # данных от главного сервера
 def get_screen_info(request):
     context = {
-        'temperature': temperature,
         'stops': stops,
         'final_stop': stops[-1],
+        'temperature': temperature,
     }
     return render(request, 'main/get_screen_info.html', context)
 

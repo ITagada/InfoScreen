@@ -33,9 +33,11 @@ document.addEventListener('DOMContentLoaded', function(){
     var currentIndex = 0;
 
     // Основная логика иммитации передвижения
-    function updateRoute() {
+    function updateRoute(currentStop) {
         var stopElements = document.querySelectorAll('.stop');
         var labelWrappers = document.querySelectorAll('.label-wrapper');
+
+        currentIndex = stops.findIndex(stop => stop.name === currentStop.name);
 
         stopElements.forEach(function(stopElement, index) {
             stopElement.classList.remove('completed', 'highlight');
@@ -66,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function(){
             completedSegment.style.width = '0%';
         }
 
-         // Добавляем класс анимации перед обновлением текста
+        // Добавляем класс анимации перед обновлением текста
         currentStopElement.classList.add('change-station-animation');
         nextStopElement.classList.add('change-station-animation');
 
@@ -181,9 +183,8 @@ document.addEventListener('DOMContentLoaded', function(){
         console.log('Data:', data);
 
         // Проверка команды и обновление маршрута
-        if (data.command === "route_update") {
-            currentIndex = (currentIndex + 1) % stops.length;
-            updateRoute();
+        if (data.command === "update_route") {
+            updateRoute(data.current_stop, data.next_stop);
         }
     };
 
@@ -199,6 +200,7 @@ document.addEventListener('DOMContentLoaded', function(){
         console.log('WebSocket connection closed.');
     };
 
-
-    updateRoute();
+    if (stops.length > 0) {
+        updateRoute(stops[0], stops[1]);
+    }
 });

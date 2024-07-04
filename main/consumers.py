@@ -33,12 +33,21 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         command = text_data_json.get('command')
 
         if command == 'update_route':
-            await self.send_command_to_client()
+            current_stop = text_data.get('current_stop')
+            next_stop = text_data.get('next_stop')
+            await self.send_command_to_client({
+                'current_stop': current_stop,
+                'next_stop': next_stop,
+                }
+            )
 
     async def send_command_to_client(self, event):
-        command = event.get('command')
+        current_stop = event.get('current_stop')
+        next_stop = event.get('next_stop')
         await self.send(text_data=json.dumps({
-            'command': command,
+            'command': 'update_route',
+            'current_stop': current_stop,
+            'next_stop': next_stop,
         }))
 
 
