@@ -175,30 +175,65 @@ document.addEventListener('DOMContentLoaded', function(){
         }, 10)
     }
 
-    let url = `ws://${window.location.host}/ws/socket-server/`
-    const mainSocket = new WebSocket(url);
+    let url = `ws://${window.location.host}/ws/socket-server/`;
+    let mainSocket;
+    let pingInterval;
+    let reconnectTimeout;
 
-    mainSocket.onmessage = function(e) {
-        let data = JSON.parse(e.data);
-        console.log('Data:', data);
+    function connectWebSocket() {
+        mainSocket = new WebSocket(url);
 
-        // Проверка команды и обновление маршрута
-        if (data.command === "update_route") {
-            updateRoute(data.current_stop, data.next_stop);
+        mainSocket.onmessage = function (e) {
+            let data = JSON.parse(e.data);
+            console.log('Data:', data);
+
+            // Проверка команды и обновление маршрута
+            if (data.command === "update_route") {
+                updateRoute(data.current_stop, data.next_stop);
+            }
+        };
+
+        mainSocket.onopen = function (e) {
+            console.log('WebSocket connection opened');
+            startPing();
+        };
+
+        mainSocket.onerror = function (e) {
+            console.error('WebSocket error observed:', e);
+            mainSocket.close();
+        };
+
+        mainSocket.onclose = function (e) {
+            console.log('WebSocket connection closed.');
+            mainSocket.close();
+            stopPing();
+            socketReconnect();
+        };
+    }
+
+    function startPing() {
+        pingInterval = setInterval(() => {
+            if (mainSocket.readyState === WebSocket.OPEN) {
+                mainSocket.send(JSON.stringify({'command': 'ping'}));
+                console.log('Ping sent')
+            }
+        }, 1000);
+    }
+
+    function stopPing() {
+        if (pingInterval) {
+            clearInterval(pingInterval);
         }
-    };
+    }
 
-    mainSocket.onopen = function(e) {
-        console.log('WebSocket connection opened');
-    };
+    function socketReconnect() {
+        reconnectTimeout = setTimeout(() => {
+            console.log('Reconnecting...');
+            connectWebSocket();
+        }, 1000);
+    }
 
-    mainSocket.onerror = function(e) {
-        console.error('WebSocket error observed:', e);
-    };
-
-    mainSocket.onclose = function(e) {
-        console.log('WebSocket connection closed.');
-    };
+    connectWebSocket()
 
     if (stops.length > 0) {
         updateRoute(stops[0], stops[1]);
