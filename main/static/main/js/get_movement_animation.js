@@ -196,6 +196,11 @@ document.addEventListener('DOMContentLoaded', function(){
         mainSocket.onopen = function (e) {
             console.log('WebSocket connection opened');
             startPing();
+            if (getSessionKey()) {
+                getCurrentRouteData();
+            } else {
+                console.warn('No session key');
+            }
         };
 
         mainSocket.onerror = function (e) {
@@ -231,6 +236,27 @@ document.addEventListener('DOMContentLoaded', function(){
             console.log('Reconnecting...');
             connectWebSocket();
         }, 1000);
+    }
+
+    function getSessionKey() {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            let parts = cookie.split('=');
+            if (parts[0].trim() === 'sessionid') {
+                return parts[1].trim();
+            }
+        }
+        return null;
+    }
+
+    function getCurrentRouteData() {
+        fetch('/get-current-route-data/')
+                .then(response => response.json())
+                .then(data => {
+                    updateRoute(data.current_stop, data.next_stop);
+                })
+                .catch(error => console.error('fetching data:', error));
+
     }
 
     connectWebSocket()

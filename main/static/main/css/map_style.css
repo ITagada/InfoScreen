@@ -20,7 +20,7 @@
     background: #9460aa;
     border-radius: 50%;
     position: absolute;
-    top: -10px;
+    top: -0.85vh;
     transform: translateX(-50%);
     transition: background 0.3s, border 0.3s;
 }
@@ -31,7 +31,8 @@
 
 .highlight {
     background: #9460aa;
-    border: 0.5cap solid #9460aa;
+    transform: scale(1.3);
+    transform-origin: right;
 }
 
 .label {
