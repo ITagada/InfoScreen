@@ -4,6 +4,7 @@ import logging
 
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
@@ -76,14 +77,14 @@ def index(request):
 def send_update_route_command(request):
     channel_layer = get_channel_layer()
 
-    current_index = request.session.get('current_index', 0)
+    current_index = cache.get('current_index', 0)
     next_index = (current_index + 1) % len(stops)
 
     current_stop = stops[current_index]
     next_stop = stops[next_index]
 
-    request.session['current_index'] = next_index
-    request.session.save()
+    cache.set('current_stop_index', current_index)
+    cache.set('current_index', next_index)
 
     try:
         async_to_sync(channel_layer.group_send)(
@@ -93,7 +94,6 @@ def send_update_route_command(request):
                 'command': 'update_route',
                 'current_stop': current_stop,
                 'next_stop': next_stop,
-                'session_key': request.session.session_key,
             }
         )
     except Exception as e:
@@ -101,7 +101,7 @@ def send_update_route_command(request):
     return render(request, 'main/send-update-route-command.html')
 
 def get_current_route_data(request):
-    current_index = request.session.get('current_index', 0)
+    current_index = cache.get('current_stop_index', 0)
     next_index = (current_index + 1) % len(stops)
 
     current_stop = stops[current_index]
