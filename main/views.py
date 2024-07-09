@@ -60,7 +60,7 @@ def index(request):
                         f"height={global_sh}")
 
             if global_sw == 1920 and global_sh == 1080:
-                return JsonResponse({'redirect_url': 'get_screen_info'})
+                return JsonResponse({'redirect_url': 'get_screen_info2'})
             elif global_sw == 3840 and global_sh == 456:
                 return JsonResponse({'redirect_url': 'get_screen_info'})
             else:
@@ -122,4 +122,9 @@ def get_screen_info(request):
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных
 # данных от главного сервера
 def get_screen_info2(request):
-    return render(request, 'main/get_screen_info2.html')
+    context = {
+        'stops': stops,
+        'final_stop': stops[-1],
+        'temperature': temperature,
+    }
+    return render(request, 'main/get_screen_info2.html', context)
