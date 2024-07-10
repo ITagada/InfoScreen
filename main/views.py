@@ -1,6 +1,7 @@
 
 import json
 import logging
+import xml.etree.ElementTree as ET
 
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -12,38 +13,51 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.propagate = True
 
-# Иммитация распаршенных данных от главного сервера
-stops = [
-    { "name": "Новокосино", "name2": "Novokosino", "position": 0 },
-    { "name": "Новогиреево", "name2": "Novogireevo", "position": 14.2 },
-    { "name": "Перово", "name2": "Perovo", "position": 28.4 },
-    { "name": "Шоссе Энтузиастов", "name2": "Enthusiasts Highway",
-      "position": 42.6 },
-    { "name": "Авиамоторная", "name2": "Aviamotornaya street", "position": 56.8 },
-    { "name": "Площадь Ильича", "name2": "Il'itch Square", "transitions": [
-        {"stantion": "Римская", "stantion2": "Rimskaya", "lane": 10,
-         "lane_name": "Люблинско-Дмитровская"},
-    ], "position": 71.2 },
-    { "name": "Марксистская", "name2": "Marksistskaya street", "transitions":[
-        {"stantion": "Таганская", "stantion2": "Taganskaya", "lane": 5,
-         "lane_name": "Кольцевая линия"},
-        {"stantion": "Таганская", "stantion2": "Taganskaya", "lane": 7,
-         "lane_name": "Таганско-Краснопресненская"}
-    ], "position": 85.4 },
-    { "name": "Третьяковская", "name2": "Tret'yakovskaya", "transitions": [
-        {"stantion": "Новокузнетская", "stantion2": "Novokuznetskaya",
-         "lane": 2,
-         "lane_name": "Замоскворецкая"},
-        {"stantion": "Третьяковская", "stantion2": "Tret'yakovskaya", "lane": 6,
-         "lane_name": "Калужско-Рижская"},
-    ], "position": 100 },
-]
+tree = ET.parse('/home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt')
+root = tree.getroot()
 
 # Иммитация распаршенных данных от главного сервера
 temperature = {'inside': 22, 'outside': 31}
 
 global_sw = None
 global_sh = None
+
+# Функция парсер данных xml, которые будут поступать от главного сервера
+def parse_station(station):
+    name = station.attrib.get('name')
+    transitions = []
+    pname = name.split('|')
+    name = pname[0]
+    name2 = pname[1]
+    for transition in station.findall('transfer'):
+        transition_name = transition.attrib.get('name')
+        if transition_name != '|':
+            names = transition_name.split('|')
+            station = names[0]
+            station2 = names[1]
+            transitions.append({"station": station, "station2": station2,
+                                "lane": 0})
+    return {
+        'name': name,
+        'name2': name2,
+        'transitions': transitions
+    }
+
+# Функция комплектовки данных парсера в формат - список словарей,
+# с добавлением данных о позиции на маршруте
+def get_stops():
+    stops = []
+    l = 100
+    start = 0
+    for stop in root.findall('station'):
+        stop_info = parse_station(stop)
+        stops.append(stop_info)
+    n = len(stops)
+    d = l / (n - 1)
+    for stop_info in stops:
+        stop_info["position"] = format(start, '.3f')
+        start += d
+    return stops
 
 # Функция обработчик стартового экрана, которая принимает в себя данные о
 # подключенных устройствах и, исходя из этого перенаправляет на ту или иную
@@ -71,10 +85,9 @@ def index(request):
     else:
         return render(request, 'main/index.html')
 
-
-
-
+# Функция обработчик команды на обновление маршрута от головного сервера
 def send_update_route_command(request):
+    stops = get_stops()
     channel_layer = get_channel_layer()
 
     current_index = cache.get('current_index', 0)
@@ -100,7 +113,10 @@ def send_update_route_command(request):
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
 
+# Функция автоматического обновления данных у клиента при переподключении к
+# сокету после потери конекта
 def get_current_route_data(request):
+    stops = get_stops()
     current_index = cache.get('current_stop_index', 0)
     next_index = (current_index + 1) % len(stops)
 
@@ -112,6 +128,7 @@ def get_current_route_data(request):
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных
 # данных от главного сервера
 def get_screen_info(request):
+    stops = get_stops()
     context = {
         'stops': stops,
         'final_stop': stops[-1],
@@ -122,6 +139,7 @@ def get_screen_info(request):
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных
 # данных от главного сервера
 def get_screen_info2(request):
+    stops = get_stops()
     context = {
         'stops': stops,
         'final_stop': stops[-1],
