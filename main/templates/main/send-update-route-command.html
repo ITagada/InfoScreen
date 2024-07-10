@@ -19,5 +19,16 @@
         });
     </script>
 
+    <button id="create-running-text-button">RUNNING TEXT</button>
+
+    <script>
+        document.getElementById('create-running-text-button').addEventListener
+        ('click', function () {
+            fetch('/send_running_text_container_command/')
+                .then(response => response.text())
+                .then(data => console.log(data))
+        });
+    </script>
+
 </body>
 </html>

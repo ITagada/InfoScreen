@@ -155,46 +155,6 @@ document.addEventListener('DOMContentLoaded', function(){
                    icoTransitionElement.id = 'ico';
                    icoTransitionElement.innerText = `${transition.lane} `;
                    const text = icoTransitionElement.innerText.trim().toLowerCase();
-                   switch (text) {
-                       case '1':
-                           icoTransitionElement.style.backgroundColor = '#ff0000';
-                       break;
-                       case '2':
-                           icoTransitionElement.style.backgroundColor = '#00bb09';
-                       break;
-                       case '3':
-                           icoTransitionElement.style.backgroundColor = '#0060e0';
-                       break;
-                       case '4':
-                           icoTransitionElement.style.backgroundColor = '#51c7ff';
-                       break;
-                       case '5':
-                           icoTransitionElement.style.backgroundColor = '#881616';
-                       break;
-                       case '6':
-                           icoTransitionElement.style.backgroundColor = '#ff9326';
-                       break;
-                       case '7':
-                           icoTransitionElement.style.backgroundColor = '#8802cd';
-                       break;
-                       case '8':
-                           icoTransitionElement.style.backgroundColor = '#ffff24';
-                       break;
-                       case '9':
-                           icoTransitionElement.style.backgroundColor = '#8a8a8a';
-                       break;
-                       case '10':
-                           icoTransitionElement.style.backgroundColor = '#98fe69';
-                       break;
-                       case '11':
-                           icoTransitionElement.style.backgroundColor = '#69fee7';
-                       break;
-                       case '12':
-                           icoTransitionElement.style.backgroundColor = '#51afc1';
-                       break;
-                       default:
-                           icoTransitionElement.style.backgroundColor = 'gray'
-                   }
                    transitionElement.appendChild(icoTransitionElement);
 
                    var transitionText = document.createElement('div');
@@ -222,6 +182,16 @@ document.addEventListener('DOMContentLoaded', function(){
         }, 10)
     }
 
+    function createRunningTextContainer(text) {
+        var col2_2 = document.querySelector('.col-2-2');
+        if (col2_2) {
+            var runningText = document.createElement('div');
+            runningText.className = 'running-text';
+            runningText.innerText = text;
+            col2_2.appendChild(runningText);
+        }
+    }
+
     let url = `ws://${window.location.host}/ws/socket-server/`;
     let mainSocket;
     let pingInterval;
@@ -237,6 +207,11 @@ document.addEventListener('DOMContentLoaded', function(){
             // Проверка команды и обновление маршрута
             if (data.command === "update_route") {
                 updateRoute(data.current_stop, data.next_stop);
+            }
+
+            //Команда создания контейнера бегущей строки
+            if (data.command === "create_running_text") {
+                createRunningTextContainer(data.text);
             }
         };
 

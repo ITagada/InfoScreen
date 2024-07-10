@@ -33,9 +33,9 @@ def parse_station(station):
         transition_name = transition.attrib.get('name')
         if transition_name != '|':
             names = transition_name.split('|')
-            station = names[0]
-            station2 = names[1]
-            transitions.append({"station": station, "station2": station2,
+            stantion = names[0]
+            stantion2 = names[1]
+            transitions.append({"stantion": stantion, "stantion2": stantion2,
                                 "lane": 0})
     return {
         'name': name,
@@ -58,6 +58,8 @@ def get_stops():
         stop_info["position"] = format(start, '.3f')
         start += d
     return stops
+
+print(get_stops())
 
 # Функция обработчик стартового экрана, которая принимает в себя данные о
 # подключенных устройствах и, исходя из этого перенаправляет на ту или иную
@@ -110,6 +112,25 @@ def send_update_route_command(request):
             }
         )
     except Exception as e:
+        return JsonResponse({'status': 'fail', 'message': str(e)})
+    return render(request, 'main/send-update-route-command.html')
+
+def send_running_text_container_command(request):
+    channel_layer = get_channel_layer()
+    logger.info('Sending running text container')
+
+    try:
+        async_to_sync(channel_layer.group_send)(
+            'route_updates',
+            {
+                'type': 'send_command_to_client',
+                'command': 'create_running_text',
+                'text': 'TEST TEXT FROM SERVER',
+            }
+        )
+        logger.info('Command send successfully')
+    except Exception as e:
+        logger.error(f'Command send failed: {e}')
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
 
