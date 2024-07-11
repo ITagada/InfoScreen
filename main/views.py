@@ -16,6 +16,9 @@ logger.propagate = True
 tree = ET.parse('/home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt')
 root = tree.getroot()
 
+text_tree = ET.parse('/home/andrew_q/PycharmProjects/BIT/textset3_3.bit')
+text_root = text_tree.getroot()
+
 # Иммитация распаршенных данных от главного сервера
 temperature = {'inside': 22, 'outside': 31}
 
@@ -59,7 +62,24 @@ def get_stops():
         start += d
     return stops
 
-print(get_stops())
+
+def parse_running_text(root):
+    running_text = []
+    for message in text_root.findall('message'):
+        text = message.text.strip()
+        color = message.attrib['color']
+        type = message.attrib['type']
+        time = message.attrib['time']
+        speed = message.attrib['speed']
+        running_text.append({
+            'text': text,
+            'color': color,
+            'type': type,
+            'time': time,
+            'speed': speed
+        })
+    return running_text
+
 
 # Функция обработчик стартового экрана, которая принимает в себя данные о
 # подключенных устройствах и, исходя из этого перенаправляет на ту или иную
@@ -115,9 +135,31 @@ def send_update_route_command(request):
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
 
+class RunningTextIterator:
+    def __init__(self, running_text):
+        self.running_text = running_text
+        self.index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index < len(self.running_text):
+            text_item = self.running_text[self.index]
+            self.index += 1
+            return text_item
+        else:
+            self.index = 0
+            text_item = self.running_text[self.index]
+            self.index += 1
+            return text_item
+
+running_text = parse_running_text(text_root)
+iterator = RunningTextIterator(running_text)
+
 def send_running_text_container_command(request):
     channel_layer = get_channel_layer()
-    logger.info('Sending running text container')
+    text_item = next(iterator)
 
     try:
         async_to_sync(channel_layer.group_send)(
@@ -125,10 +167,9 @@ def send_running_text_container_command(request):
             {
                 'type': 'send_command_to_client',
                 'command': 'create_running_text',
-                'text': 'TEST TEXT FROM SERVER',
+                'text': text_item['text'],
             }
         )
-        logger.info('Command send successfully')
     except Exception as e:
         logger.error(f'Command send failed: {e}')
         return JsonResponse({'status': 'fail', 'message': str(e)})

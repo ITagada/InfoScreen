@@ -38,20 +38,30 @@ class ScreenConsumer(AsyncWebsocketConsumer):
             await self.send_command_to_client({
                 'current_stop': current_stop,
                 'next_stop': next_stop,
-                }
-            )
+                })
+        elif command == 'create_running_text':
+            text = text_data_json.get('text')
+            await self.send_command_to_client({
+                'command': 'create_running_text',
+                'text': text,
+            })
 
     async def send_command_to_client(self, event):
-        current_stop = event.get('current_stop')
-        next_stop = event.get('next_stop')
-        await self.send(text_data=json.dumps({
-            'command': 'update_route',
-            'current_stop': current_stop,
-            'next_stop': next_stop,
-        }))
-
-
-
+        command = event.get('command')
+        if command == 'update_route':
+            current_stop = event.get('current_stop')
+            next_stop = event.get('next_stop')
+            await self.send(text_data=json.dumps({
+                'command': 'update_route',
+                'current_stop': current_stop,
+                'next_stop': next_stop,
+            }))
+        elif command == 'create_running_text':
+            text = event.get('text')
+            await self.send(text_data=json.dumps({
+                'command': 'create_running_text',
+                'text': text,
+            }))
 
 class SyncVideoConsumer(WebsocketConsumer):
     def connect(self):

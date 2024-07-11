@@ -183,12 +183,37 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 
     function createRunningTextContainer(text) {
-        var col2_2 = document.querySelector('.col-2-2');
-        if (col2_2) {
+        var existingRunningText = col2_2.querySelector('.running-text');
+        if (existingRunningText) {
+            existingRunningText.classList.remove('show');
+            existingRunningText.classList.add('hide');
+            setTimeout(function () {
+                col2_2.removeChild(existingRunningText);
+            }, 500);
+        } else {
+            // Создать новый контейнер 'running-text'
             var runningText = document.createElement('div');
             runningText.className = 'running-text';
-            runningText.innerText = text;
-            col2_2.appendChild(runningText);
+
+            var textContainer = document.createElement('div');
+            textContainer.classList.add('text-container');
+            textContainer.innerText = text;
+
+            col2_2.appendChild(textContainer);
+
+            setTimeout(function () {
+                var textWidth = textContainer.scrollWidth;
+                var animationDuration = textWidth / 70;
+
+                textContainer.style.setProperty('--animation-duration', animationDuration + 's');
+
+                runningText.appendChild(textContainer);
+                col2_2.appendChild(runningText);
+
+                setTimeout(function () {
+                    runningText.classList.add('show');
+                }, 10);
+            }, 0);
         }
     }
 
