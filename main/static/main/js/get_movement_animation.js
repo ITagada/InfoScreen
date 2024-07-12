@@ -1,12 +1,59 @@
-//Анимация имитации передвижения по маршруту
 document.addEventListener('DOMContentLoaded', function(){
+    // Создание контейнеров динамически
+    var container2 = document.getElementById('container-2');
+    var container1 = document.getElementById('container-1');
+
+    var col2_1 = document.createElement('div');
+    col2_1.className = 'col-2-1';
+    container2.appendChild(col2_1);
+
+    var currentStopElement = document.createElement('div');
+    currentStopElement.className = 'current-stop';
+    currentStopElement.id = 'current-stop';
+    currentStopElement.innerText = 'Current stop: ';
+    col2_1.appendChild(currentStopElement);
+
+    var nextStopElement = document.createElement('div');
+    nextStopElement.className = 'next-stop';
+    nextStopElement.id = 'next-stop';
+    nextStopElement.innerText = 'Next stop: ';
+    col2_1.appendChild(nextStopElement);
+
+    var col2_2 = document.createElement('div');
+    col2_2.className = 'col-2-2';
+    container2.appendChild(col2_2);
+
+    var linkElement = document.createElement('link');
+    linkElement.rel = 'stylesheet';
+    linkElement.href = '/static/main/css/map_style.css';
+    col2_2.appendChild(linkElement);
+
+    var routeElement = document.createElement('div');
+    routeElement.className = 'route';
+    routeElement.id = 'route';
+    col2_2.appendChild(routeElement);
+
+    var completedSegment = document.createElement('div');
+    completedSegment.className = 'completed-segment';
+    completedSegment.id = 'completed-segment';
+    routeElement.appendChild(completedSegment);
+
+    // Получение данных остановок из контейнера
     var stops = JSON.parse(document.getElementById('stops-data').textContent);
 
-    var routeElement = document.getElementById('route');
-    var completedSegment = document.getElementById('completed-segment');
-    var transitionsContainer = document.getElementById('col-1-1');
-    var currentStopElement = document.getElementById('current-stop');
-    var nextStopElement = document.getElementById('next-stop');
+    var headerChange = document.createElement('div');
+    headerChange.className = 'col-1-1-1';
+    headerChange.id = 'col-1-1-1';
+    container1.appendChild(headerChange);
+
+    var headerText = document.createElement('h2');
+    headerText.innerText = 'Пересадки / Change here for';
+    headerChange.appendChild(headerText);
+
+    var transitionsContainer = document.createElement('div');
+    transitionsContainer.className = 'col-1-1';
+    transitionsContainer.id = 'col-1-1';
+    container1.appendChild(transitionsContainer);
 
     // Создание необходимых контейнеров и наполнение их данными
     stops.forEach(function(stop, index) {
@@ -108,46 +155,6 @@ document.addEventListener('DOMContentLoaded', function(){
                    icoTransitionElement.id = 'ico';
                    icoTransitionElement.innerText = `${transition.lane} `;
                    const text = icoTransitionElement.innerText.trim().toLowerCase();
-                   switch (text) {
-                       case '1':
-                           icoTransitionElement.style.backgroundColor = '#ff0000';
-                       break;
-                       case '2':
-                           icoTransitionElement.style.backgroundColor = '#00bb09';
-                       break;
-                       case '3':
-                           icoTransitionElement.style.backgroundColor = '#0060e0';
-                       break;
-                       case '4':
-                           icoTransitionElement.style.backgroundColor = '#51c7ff';
-                       break;
-                       case '5':
-                           icoTransitionElement.style.backgroundColor = '#881616';
-                       break;
-                       case '6':
-                           icoTransitionElement.style.backgroundColor = '#ff9326';
-                       break;
-                       case '7':
-                           icoTransitionElement.style.backgroundColor = '#8802cd';
-                       break;
-                       case '8':
-                           icoTransitionElement.style.backgroundColor = '#ffff24';
-                       break;
-                       case '9':
-                           icoTransitionElement.style.backgroundColor = '#8a8a8a';
-                       break;
-                       case '10':
-                           icoTransitionElement.style.backgroundColor = '#98fe69';
-                       break;
-                       case '11':
-                           icoTransitionElement.style.backgroundColor = '#69fee7';
-                       break;
-                       case '12':
-                           icoTransitionElement.style.backgroundColor = '#51afc1';
-                       break;
-                       default:
-                           icoTransitionElement.style.backgroundColor = 'gray'
-                   }
                    transitionElement.appendChild(icoTransitionElement);
 
                    var transitionText = document.createElement('div');
@@ -175,6 +182,59 @@ document.addEventListener('DOMContentLoaded', function(){
         }, 10)
     }
 
+    function createRunningTextContainer(text) {
+        var existingRunningText = col2_2.querySelector('.running-text');
+        if (existingRunningText) {
+            existingRunningText.classList.remove('show');
+            existingRunningText.classList.add('hide');
+            setTimeout(function () {
+                col2_2.removeChild(existingRunningText);
+            }, 500);
+        } else {
+            var runningText = document.createElement('div');
+            runningText.className = 'running-text';
+
+            var textContainer = document.createElement('div');
+            textContainer.classList.add('text-container');
+            textContainer.innerText = text;
+
+            runningText.appendChild(textContainer);
+            col2_2.appendChild(runningText);
+
+            setTimeout(function () {
+                var textWidth = textContainer.scrollWidth;
+                var containerWidth = runningText.clientWidth;
+
+                textContainer.style.transform = 'translateX(' + containerWidth + 'px)';
+
+                function animateText() {
+                    var currentPosition = containerWidth;
+
+                    function step() {
+                        // Уменьшаем позицию текста на основе скорости
+                        currentPosition -= 4; // Скорость можно настроить
+
+                        // Если текст все еще видим в пределах контейнера
+                        if (currentPosition + textWidth > 0) {
+                            textContainer.style.transform = 'translateX(' + currentPosition + 'px)';
+                            requestAnimationFrame(step);
+                        } else {
+                            // Сброс позиции текста в начальное положение
+                            currentPosition = containerWidth;
+                            textContainer.style.transform = 'translateX(' + currentPosition + 'px)';
+                            requestAnimationFrame(step);
+                        }
+                    }
+
+                    requestAnimationFrame(step);
+                }
+
+                runningText.classList.add('show');
+                animateText();
+            }, 0);
+        }
+    }
+
     let url = `ws://${window.location.host}/ws/socket-server/`;
     let mainSocket;
     let pingInterval;
@@ -190,6 +250,11 @@ document.addEventListener('DOMContentLoaded', function(){
             // Проверка команды и обновление маршрута
             if (data.command === "update_route") {
                 updateRoute(data.current_stop, data.next_stop);
+            }
+
+            //Команда создания контейнера бегущей строки
+            if (data.command === "create_running_text") {
+                createRunningTextContainer(data.text);
             }
         };
 

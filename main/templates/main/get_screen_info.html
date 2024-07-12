@@ -12,25 +12,10 @@
 </head>
 <body>
     <div class="main">
-        <div class="container-1">
-            <div class="col-1-1-1">
-                <h2>Пересадки / Change here for</h2>
-            </div>
-            <div class="col-1-1" id="col-1-1"></div>
-        </div>
-        <div class="container-2">
-            <div class="col-2-1">
-                <div class="current-stop" id="current-stop">Current stop: </div>
-                <div class="next-stop" id="next-stop">Next stop: </div>
-            </div>
-            <div class="col-2-2">
-                <link rel="stylesheet" href="{% static 'main/css/map_style.css' %}">
-                <div class="route" id="route">
-                    <div class="completed-segment" id="completed-segment"></div>
-                </div>
-                <div class="stops-data" id="stops-data">
-                    {{ stops|json_script:"stops-data" }}    
-                </div>
+        <div class="container-1" id="container-1">        </div>
+        <div class="container-2" id="container-2">
+            <div class="stops-data" id="stops-data">
+                {{ stops|json_script:"stops-data" }}    
             </div>
         </div>
         <div class="container-3">
@@ -65,7 +50,6 @@
             <div class="col-3-2"></div>
         </div>
     </div>
-{#    <script src="{% static 'main/js/websocket_connection.js' %}"></script>#}
     <script src="{% static 'main/js/get_movement_animation.js' %}"></script>
     <script src="{% static 'main/js/get_date_time.js' %}"></script>
     <script src="{% static 'main/js/sync_video.js' %}"></script>

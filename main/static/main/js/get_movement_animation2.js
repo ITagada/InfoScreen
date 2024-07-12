@@ -191,7 +191,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 col2_2.removeChild(existingRunningText);
             }, 500);
         } else {
-            // Создать новый контейнер 'running-text'
             var runningText = document.createElement('div');
             runningText.className = 'running-text';
 
@@ -199,20 +198,39 @@ document.addEventListener('DOMContentLoaded', function(){
             textContainer.classList.add('text-container');
             textContainer.innerText = text;
 
-            col2_2.appendChild(textContainer);
+            runningText.appendChild(textContainer);
+            col2_2.appendChild(runningText);
 
             setTimeout(function () {
                 var textWidth = textContainer.scrollWidth;
-                var animationDuration = textWidth / 70;
+                var containerWidth = runningText.clientWidth;
 
-                textContainer.style.setProperty('--animation-duration', animationDuration + 's');
+                textContainer.style.transform = 'translateX(' + containerWidth + 'px)';
 
-                runningText.appendChild(textContainer);
-                col2_2.appendChild(runningText);
+                function animateText() {
+                    var currentPosition = containerWidth;
 
-                setTimeout(function () {
-                    runningText.classList.add('show');
-                }, 10);
+                    function step() {
+                        // Уменьшаем позицию текста на основе скорости
+                        currentPosition -= 4; // Скорость можно настроить
+
+                        // Если текст все еще видим в пределах контейнера
+                        if (currentPosition + textWidth > 0) {
+                            textContainer.style.transform = 'translateX(' + currentPosition + 'px)';
+                            requestAnimationFrame(step);
+                        } else {
+                            // Сброс позиции текста в начальное положение
+                            currentPosition = containerWidth;
+                            textContainer.style.transform = 'translateX(' + currentPosition + 'px)';
+                            requestAnimationFrame(step);
+                        }
+                    }
+
+                    requestAnimationFrame(step);
+                }
+
+                runningText.classList.add('show');
+                animateText();
             }, 0);
         }
     }

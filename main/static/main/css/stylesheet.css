@@ -114,40 +114,30 @@ h2 {
     font-size: 3vh;
     font-family: Arial, sans-serif;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 .running-text {
-    flex: 1;
     display: flex;
-    position: absolute;
     bottom: 0;
+    left: 0;
+    position: absolute;
     background: #1b1b1b;
-    width: 60vw;
-    height: 5vh;
+    width: 100%;
+    height: 10vh;
     opacity: 0;
     overflow: hidden;
     transition: opacity 0.5s ease-in-out;
 }
 
-:root {
-    --animation-duration: 10s;
-}
-
 .text-container {
-    flex: 1;
-    display: flex;
-    position: absolute;
-    max-width: 200%;
-    right: 0;
-    left: -15vw;
-    height: 100%;
+    display: inline-block;
+    color: #9460aa;
+    font-size: 3cap;
     white-space: nowrap;
-    animation: marquee var(--animation-duration) linear infinite;
-}
-
-@keyframes marquee {
-    0% { transform: translateX(100%) }
-    100% { transform: translateX(-100%) }
+    position: relative;
+    right: 0;
+    height: 100%;
 }
 
 .running-text.show {
