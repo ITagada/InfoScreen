@@ -36,6 +36,7 @@
 }
 
 .label {
+    position: absolute;
     transform: rotate(60deg);
     transform-origin: top left;
     transition: color 0.3s, transform 0.3s;
@@ -45,9 +46,10 @@
 
 .label-wrapper {
     position: absolute;
-    top: 30px;
+    display: inline-block;
+    top: calc(100% + 10px);
     transform-origin: top left;
-    white-space: pre-line;
+    white-space: normal;
     overflow-wrap: break-word;
     word-wrap: break-word;
 }
