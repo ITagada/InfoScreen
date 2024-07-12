@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    {% csrf_token %}
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            let screenWidth = window.screen.width;
+            let screenHeight = window.screen.height;
+
+            console.log('Screen Width:', screenWidth);
+            console.log('Screen Height:', screenHeight);
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch('/get_screen_info/', {
+                method: "POST",
+                cache: 'no-cache',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    screen_width: screenWidth,
+                    screen_height: screenHeight
+                })
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' +response.statusText);
+                }
+                return response.json();
+            }).then(data => {
+                console.log(data);
+            }).catch(error => {
+                console.error('There was a problem with the fetch operation: ', error);
+            }).finally(function() {
+                console.log('Lets see what happened')
+            });
+        });
+    </script>
+</body>
+</html>

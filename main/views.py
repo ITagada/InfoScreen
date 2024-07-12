@@ -38,8 +38,7 @@ def parse_station(station):
             names = transition_name.split('|')
             stantion = names[0]
             stantion2 = names[1]
-            transitions.append({"stantion": stantion, "stantion2": stantion2,
-                                "lane": 0})
+            transitions.append({"stantion": stantion, "stantion2": stantion2, "lane": 0})
     return {
         'name': name,
         'name2': name2,
@@ -62,7 +61,6 @@ def get_stops():
         start += d
     return stops
 
-
 def parse_running_text(root):
     running_text = []
     for message in text_root.findall('message'):
@@ -79,7 +77,6 @@ def parse_running_text(root):
             'speed': speed
         })
     return running_text
-
 
 # Функция обработчик стартового экрана, которая принимает в себя данные о
 # подключенных устройствах и, исходя из этого перенаправляет на ту или иную
