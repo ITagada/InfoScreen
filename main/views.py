@@ -205,3 +205,40 @@ def get_screen_info2(request):
         'temperature': temperature,
     }
     return render(request, 'main/get_screen_info2.html', context)
+
+def send_play_video_command(request):
+    channel_layer = get_channel_layer()
+
+    try:
+        logger.info(f'Sending play video command')
+        async_to_sync(channel_layer.group_send)(
+            'video_sync_group',
+            {
+                'type': 'play_video',
+                'command': 'start',
+                'start_time': 0,
+                'current_time': 0,
+            }
+        )
+        return JsonResponse({'status': 'ok'})
+    except Exception as e:
+        logger.error(f'Command send failed: {e}')
+        return JsonResponse({'status': 'fail', 'message': str(e)})
+    return render(request, 'main/send-update-route-command.html')
+
+def send_stop_video_command(request):
+    channel_layer = get_channel_layer()
+
+    try:
+        logger.info(f'Sending stop video command')
+        async_to_sync(channel_layer.group_send)(
+            'video_sync_group',
+            {
+                'type': 'stop_video',
+            }
+        )
+        return JsonResponse({'status': 'ok'})
+    except Exception as e:
+        logger.error(f'Command send failed: {e}')
+        return JsonResponse({'status': 'fail', 'message': str(e)})
+    return render(request, 'main/send-update-route-command.html')

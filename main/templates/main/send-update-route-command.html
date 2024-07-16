@@ -30,5 +30,27 @@
         });
     </script>
 
+    <button id="play-video-button">PLAY VIDEO</button>
+
+    <script>
+        document.getElementById('play-video-button').addEventListener
+        ('click', function () {
+            fetch('/send_play_video_command/')
+                .then(response => response.text())
+                .then(data => console.log(data))
+        });
+    </script>
+
+    <button id="stop-video-button">STOP VIDEO</button>
+
+    <script>
+        document.getElementById('stop-video-button').addEventListener
+        ('click', function () {
+            fetch('/send_stop_video_command/')
+                .then(response => response.text())
+                .then(data => console.log(data))
+        });
+    </script>
+
 </body>
 </html>
