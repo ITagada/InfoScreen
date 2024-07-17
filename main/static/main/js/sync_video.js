@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let videoStarted = false;
     let videoElement;
     let syncInterval;
+    let lastSyncTime = 0;
 
     socket.onopen = function () {
         console.log('VideoSocket is connected');
@@ -95,10 +96,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Отправка текущего времени при обновлении времени воспроизведения
             videoElement.addEventListener('timeupdate', function () {
                 if (videoStarted && socket.readyState === WebSocket.OPEN) {
-                    socket.send(JSON.stringify({
-                        'command': 'sync',
-                        'current_time': videoElement.currentTime
+                    const currentTime = videoElement.currentTime;
+                    const now = Date.now();
+
+                    if (now > lastSyncTime > 1000) {
+
+                        lastSyncTime = now;
+                        socket.send(JSON.stringify({
+                            'command': 'sync',
+                            'current_time': currentTime
                     }));
+                        console.log('Sync command is sending');
+                    }
                 }
             });
 
@@ -124,10 +133,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Установка интервала проверки синхронизации
     syncInterval = setInterval(function () {
         if (videoStarted && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({
-                'command': 'sync',
-                'current_time': videoElement.currentTime
-            }));
+            const currentTime = videoElement.currentTime;
+            const now = Date.now();
+
+            if (now > lastSyncTime > 1000) {
+                lastSyncTime = now;
+                socket.send(JSON.stringify({
+                    'command': 'sync',
+                    'current_time': currentTime
+                }));
+                console.log('Sync command is sending');
+            }
         }
     }, 1000);
 

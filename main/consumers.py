@@ -64,6 +64,7 @@ class ScreenConsumer(AsyncWebsocketConsumer):
             }))
 
 class SyncVideoConsumer(AsyncWebsocketConsumer):
+    max_time = 0
     # Присоединение клиента к общей группе
     async def connect(self):
         await self.channel_layer.group_add('video_sync_group', self.channel_name)
@@ -90,13 +91,15 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         elif command == "sync":
             # Отправка команды начала воспроизведения
             current_time = data.get("current_time")
-            await self.channel_layer.group_send(
-                'video_sync_group',
-                {
-                    'type': 'sync_video',
-                    'current_time': current_time,
-                }
-            )
+            if current_time > self.max_time:
+                self.max_time = current_time
+                await self.channel_layer.group_send(
+                    'video_sync_group',
+                    {
+                        'type': 'sync_video',
+                        'current_time': self.max_time,
+                    }
+                )
         elif command == "stop":
             await self.channel_layer.group_send(
                 'video_sync_group',
