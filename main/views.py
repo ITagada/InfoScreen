@@ -215,9 +215,7 @@ def send_play_video_command(request):
             'video_sync_group',
             {
                 'type': 'play_video',
-                'command': 'start',
                 'start_time': 0,
-                'current_time': 0,
             }
         )
         return JsonResponse({'status': 'ok'})
@@ -235,6 +233,24 @@ def send_stop_video_command(request):
             'video_sync_group',
             {
                 'type': 'stop_video',
+            }
+        )
+        return JsonResponse({'status': 'ok'})
+    except Exception as e:
+        logger.error(f'Command send failed: {e}')
+        return JsonResponse({'status': 'fail', 'message': str(e)})
+    return render(request, 'main/send-update-route-command.html')
+
+def send_sync_video_command(request):
+    channel_layer = get_channel_layer()
+
+    try:
+        logger.info(f'Sending sync video command')
+        async_to_sync(channel_layer.group_send)(
+            'video_sync_group',
+            {
+                'type': 'sync_video',
+                'current_time': 0,
             }
         )
         return JsonResponse({'status': 'ok'})

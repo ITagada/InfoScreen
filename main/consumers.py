@@ -84,13 +84,19 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
                 'video_sync_group',
                 {
                     'type': 'play_video',
-                    'command': start_time,
+                    'start_time': start_time,
                 }
             )
         elif command == "sync":
             # Отправка команды начала воспроизведения
             current_time = data.get("current_time")
-            await self.check_and_sync(current_time)
+            await self.channel_layer.group_send(
+                'video_sync_group',
+                {
+                    'type': 'sync_video',
+                    'current_time': current_time,
+                }
+            )
         elif command == "stop":
             await self.channel_layer.group_send(
                 'video_sync_group',
@@ -99,27 +105,18 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-    async def check_and_sync(self, current_time):
-        await self.channel_layer.group_send(
-            'video_sync_group',
-            {
-                'type': 'sync_video',
-                'current_time': current_time,
-            }
-        )
+    async def play_video(self, event):
+        start_time = event["start_time"]
+        await self.send(text_data=json.dumps({
+            "command": "start",
+            "start_time": start_time
+        }))
 
     async def sync_video(self, event):
         current_time = event["current_time"]
         await self.send(text_data=json.dumps({
             "command": "sync",
             "current_time": current_time
-        }))
-
-    async def play_video(self, event):
-        start_time = event["start_time"]
-        await self.send(text_data=json.dumps({
-            "command": "start",
-            "start_time": start_time
         }))
 
     async def stop_video(self, event):

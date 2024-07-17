@@ -52,5 +52,16 @@
         });
     </script>
 
+    <button id="sync-video-button">SYNC VIDEO</button>
+
+    <script>
+        document.getElementById('sync-video-button').addEventListener
+        ('click', function () {
+            fetch('/send_sync_video_command/')
+                .then(response => response.text())
+                .then(data => console.log(data))
+        });
+    </script>
+
 </body>
 </html>

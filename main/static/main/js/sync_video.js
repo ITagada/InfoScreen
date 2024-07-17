@@ -70,7 +70,10 @@ document.addEventListener('DOMContentLoaded', function() {
             videoElement.addEventListener('ended', function () {
                 if (videoStarted) {
                     videoElement.currentTime = 0;
-                    videoElement.play();
+                    videoElement.addEventListener('seeked', function onSeeked() {
+                        videoElement.removeEventListener('seeked', onSeeked);
+                        videoElement.play();
+                    });
                 }
             });
 
