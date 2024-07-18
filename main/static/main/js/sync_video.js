@@ -35,13 +35,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }).catch((error) => {
                 console.error('Autoplay error:', error);
             });
-        } else if (command === "sync" && videoStarted) {
-            // Запускаем синхронизацию
-            const currentTime = data.current_time;
-            const diff = Math.abs(videoElement.currentTime - currentTime);
-            if (diff > 0.5) {
-                videoElement.currentTime = currentTime;
-            }
+        // } else if (command === "max_time") {
+        //   console.log('Max time: ', data.max_time);
+        } else if (command === "sync" && videoStarted && !videoElement.paused) {
+            // // Запускаем синхронизацию
+            // const currentTime = data.current_time;
+            // const diff = Math.abs(videoElement.currentTime - currentTime);
+            // if (diff > 0.5) {
+            //     videoElement.currentTime = currentTime;
+            // }
+            // console.log(`Current time: ${currentTime}`);
+            videoElement.currentTime = data.current_time;
         } else if (command === "stop" && videoStarted) {
             removeVideoElement();
         }
@@ -78,35 +82,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            videoElement.addEventListener('pointerup', function () {
-                if (!videoStarted) {
-                    socket.send(JSON.stringify({
-                        'command': 'start',
-                        'start_time': 0
-                    }));
-                    videoStarted = true;
-                } else {
-                    socket.send(JSON.stringify({
-                        'command': 'sync',
-                        'current_time': videoElement.currentTime
-                    }));
-                }
-            });
+            // videoElement.addEventListener('pointerup', function () {
+            //     if (!videoStarted) {
+            //         socket.send(JSON.stringify({
+            //             'command': 'start',
+            //             'start_time': 0
+            //         }));
+            //         videoStarted = true;
+            //     } else {
+            //         socket.send(JSON.stringify({
+            //             'command': 'sync',
+            //             'current_time': videoElement.currentTime
+            //         }));
+            //     }
+            // });
 
             // Отправка текущего времени при обновлении времени воспроизведения
             videoElement.addEventListener('timeupdate', function () {
-                if (videoStarted && socket.readyState === WebSocket.OPEN) {
+                if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
                     const currentTime = videoElement.currentTime;
                     const now = Date.now();
 
-                    if (now > lastSyncTime > 1000) {
+                    if (now - lastSyncTime > 1000) {
 
                         lastSyncTime = now;
                         socket.send(JSON.stringify({
                             'command': 'sync',
                             'current_time': currentTime
-                    }));
-                        console.log('Sync command is sending');
+                        }));
                     }
                 }
             });
@@ -136,13 +139,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentTime = videoElement.currentTime;
             const now = Date.now();
 
-            if (now > lastSyncTime > 1000) {
+            if (now - lastSyncTime > 1000) {
                 lastSyncTime = now;
                 socket.send(JSON.stringify({
                     'command': 'sync',
                     'current_time': currentTime
                 }));
-                console.log('Sync command is sending');
             }
         }
     }, 1000);

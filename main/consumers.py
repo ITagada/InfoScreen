@@ -1,8 +1,8 @@
 import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
+from collections import defaultdict
 
 class ScreenConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -64,7 +64,10 @@ class ScreenConsumer(AsyncWebsocketConsumer):
             }))
 
 class SyncVideoConsumer(AsyncWebsocketConsumer):
-    max_time = 0
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.video_times = {}
+
     # Присоединение клиента к общей группе
     async def connect(self):
         await self.channel_layer.group_add('video_sync_group', self.channel_name)
@@ -73,6 +76,8 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
     # Отключение клиента от общей группы
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard('video_sync_group', self.channel_name)
+        if self.channel_name in self.video_times:
+            del self.video_times[self.channel_name]
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -91,13 +96,21 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         elif command == "sync":
             # Отправка команды начала воспроизведения
             current_time = data.get("current_time")
-            if current_time > self.max_time:
-                self.max_time = current_time
+            self.video_times[self.channel_name] = current_time
+
+            max_time = max(self.video_times.values())
+
+            # await self.send(text_data=json.dumps({
+            #     'command': 'max_time',
+            #     'max_time': max_time,
+            # }))
+
+            if abs(max_time - current_time) > 0.5:
                 await self.channel_layer.group_send(
                     'video_sync_group',
                     {
                         'type': 'sync_video',
-                        'current_time': self.max_time,
+                        'current_time': max_time,
                     }
                 )
         elif command == "stop":
