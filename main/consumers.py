@@ -1,4 +1,5 @@
 import json
+import time
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import async_to_sync
@@ -86,11 +87,13 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         if command == "start":
             # Отправка команды синхронизации всем клиентам в группе
             start_time = data.get("start_time", 0)
+            server_time = time.time()
             await self.channel_layer.group_send(
                 'video_sync_group',
                 {
                     'type': 'play_video',
                     'start_time': start_time,
+                    'server_time': server_time,
                 }
             )
         elif command == "sync":
@@ -123,9 +126,11 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
     async def play_video(self, event):
         start_time = event["start_time"]
+        server_time = event["server_time"]
         await self.send(text_data=json.dumps({
             "command": "start",
-            "start_time": start_time
+            "start_time": start_time,
+            "server_time": server_time,
         }))
 
     async def sync_video(self, event):

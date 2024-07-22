@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let videoElement;
     let syncInterval;
     let lastSyncTime = 0;
+    let lastReceivedTime = 0;
 
     socket.onopen = function () {
         console.log('VideoSocket is connected');
@@ -27,7 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Запускаем видео и фиксируем время
             const startTime = data.start_time;
-            videoElement.currentTime = startTime;
+            const serverTime = data.server_time;
+            const clientTime = Date.now() / 1000;
+            const syncStartTime = startTime + (clientTime - serverTime);
+            videoElement.currentTime = syncStartTime;
             videoElement.muted = true;
             videoElement.play().then(() => {
                 //videoElement.muted = false;
@@ -38,15 +42,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // } else if (command === "max_time") {
         //   console.log('Max time: ', data.max_time);
         } else if (command === "sync" && videoStarted && !videoElement.paused) {
-            // // Запускаем синхронизацию
-            // const currentTime = data.current_time;
-            // const diff = Math.abs(videoElement.currentTime - currentTime);
-            // if (diff > 0.5) {
-            //     videoElement.currentTime = currentTime;
-            // }
-            // console.log(`Current time: ${currentTime}`);
-            videoElement.currentTime = data.current_time;
+            const currentTime = data.current_time;
+            const diff = Math.abs(videoElement.currentTime - currentTime);
+            if (diff > 0.5) {
+                videoElement.pause();
+                videoElement.currentTime = currentTime;
+                videoElement.play().then(() => {
+                    console.log('Video synced and started again');
+                }).catch((error) => {
+                    console.error('Resyncing error:', error);
+                });
+                lastReceivedTime = currentTime;
+            }
         } else if (command === "stop" && videoStarted) {
+            console.log('Stop command received'); // Добавлен лог
             removeVideoElement();
         }
     };
@@ -82,21 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // videoElement.addEventListener('pointerup', function () {
-            //     if (!videoStarted) {
-            //         socket.send(JSON.stringify({
-            //             'command': 'start',
-            //             'start_time': 0
-            //         }));
-            //         videoStarted = true;
-            //     } else {
-            //         socket.send(JSON.stringify({
-            //             'command': 'sync',
-            //             'current_time': videoElement.currentTime
-            //         }));
-            //     }
-            // });
-
             // Отправка текущего времени при обновлении времени воспроизведения
             videoElement.addEventListener('timeupdate', function () {
                 if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
@@ -104,7 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const now = Date.now();
 
                     if (now - lastSyncTime > 1000) {
-
                         lastSyncTime = now;
                         socket.send(JSON.stringify({
                             'command': 'sync',

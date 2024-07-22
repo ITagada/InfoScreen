@@ -1,6 +1,7 @@
 
 import json
 import logging
+import time
 import xml.etree.ElementTree as ET
 
 from django.shortcuts import render
@@ -211,11 +212,13 @@ def send_play_video_command(request):
 
     try:
         logger.info(f'Sending play video command')
+        server_time = time.time()
         async_to_sync(channel_layer.group_send)(
             'video_sync_group',
             {
                 'type': 'play_video',
                 'start_time': 0,
+                'server_time': server_time,
             }
         )
         return JsonResponse({'status': 'ok'})
