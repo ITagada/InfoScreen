@@ -13,16 +13,11 @@ document.addEventListener('DOMContentLoaded', function() {
         socket = new WebSocket('ws://' + window.location.host + '/ws/video_sync/');
 
         socket.onopen = function () {
-            console.log('VideoSocket is connected');
-            if (videoStarted && (lastCommand === 'start' || lastCommand === 'sync')) {
-                socket.send(JSON.stringify({
-                    'command': 'start',
-                    'start_time': lastVideoTime,
-                }));
-            } else if (lastCommand === 'stop') {
-                removeVideoElement();
-            }
-        };
+            console.log('VideoSocket is open');
+            socket.send(JSON.stringify({
+                'command': 'get_state'
+            }));
+        }
 
         socket.onerror = function (error) {
             console.error('VideoSocket error:', error);
@@ -32,7 +27,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = JSON.parse(e.data);
             const command = data.command;
 
-            if (command === "start") {
+            if (command === "state") {
+                if (videoStarted && (lastCommand === "start" || lastCommand === "sync")) {
+                    socket.send(JSON.stringify({
+                        'command': 'start',
+                        'startTime': lastVideoTime,
+                    }));
+                } else if (command === "stop") {
+                    removeVideoElement();
+                }
+            } else if (command === "start") {
                 if (!videoStarted) {
                     createVideoElement();
                 }
@@ -48,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }).catch((error) => {
                     console.error('Autoplay error:', error);
                 });
-                lastCommand = command;
+                lastCommand = 'start';
                 lastSyncTime = syncStartTime;
             } else if (command === "sync" && videoStarted && !videoElement.paused) {
                 const currentTime = data.current_time;
@@ -62,12 +66,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.error('Resyncing error:', error);
                     });
                     lastReceivedTime = currentTime;
-                    lastCommand = command;
                 }
             } else if (command === "stop" && videoStarted) {
                 console.log('Stop command received');
                 removeVideoElement();
-                lastCommand = command;
+                lastCommand = 'stop';
             }
         };
 

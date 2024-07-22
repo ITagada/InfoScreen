@@ -66,28 +66,34 @@ class ScreenConsumer(AsyncWebsocketConsumer):
 
 class SyncVideoConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.video_times = {}
+        super().__init__(*args, **kwargs)
+        self.video_times = {'status': None, 'start_time': None, 'end_time': None, 'server_time': None}
+        self.client_times = {}  # Словарь для хранения текущего времени для каждого клиента
 
-    # Присоединение клиента к общей группе
     async def connect(self):
         await self.channel_layer.group_add('video_sync_group', self.channel_name)
         await self.accept()
+        await self.send(text_data=json.dumps({
+            'command': 'request_state'
+        }))
 
-    # Отключение клиента от общей группы
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard('video_sync_group', self.channel_name)
-        if self.channel_name in self.video_times:
-            del self.video_times[self.channel_name]
+        if self.channel_name in self.client_times:
+            del self.client_times[self.channel_name]
 
     async def receive(self, text_data):
         data = json.loads(text_data)
         command = data.get("command")
 
         if command == "start":
-            # Отправка команды синхронизации всем клиентам в группе
             start_time = data.get("start_time", 0)
             server_time = time.time()
+            self.video_times = {
+                'status': 'start',
+                'start_time': start_time,
+                'server_time': server_time,
+            }
             await self.channel_layer.group_send(
                 'video_sync_group',
                 {
@@ -97,16 +103,10 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
                 }
             )
         elif command == "sync":
-            # Отправка команды начала воспроизведения
             current_time = data.get("current_time")
-            self.video_times[self.channel_name] = current_time
+            self.client_times[self.channel_name] = current_time
 
-            max_time = max(self.video_times.values())
-
-            # await self.send(text_data=json.dumps({
-            #     'command': 'max_time',
-            #     'max_time': max_time,
-            # }))
+            max_time = max(self.client_times.values())
 
             if abs(max_time - current_time) > 0.5:
                 await self.channel_layer.group_send(
@@ -117,12 +117,19 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
                     }
                 )
         elif command == "stop":
+            self.video_times = {
+                'status': 'stop',
+                'start_time': None,
+                'server_time': None,
+            }
             await self.channel_layer.group_send(
                 'video_sync_group',
                 {
                     'type': 'stop_video',
                 }
             )
+        elif command == "get_state":
+            await self.send(text_data=json.dumps(self.video_times))
 
     async def play_video(self, event):
         start_time = event["start_time"]
