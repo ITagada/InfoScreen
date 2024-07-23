@@ -249,11 +249,12 @@ def send_sync_video_command(request):
 
     try:
         logger.info(f'Sending sync video command')
+        current_time = float(request.GET.get('current_time', 0))
         async_to_sync(channel_layer.group_send)(
             'video_sync_group',
             {
                 'type': 'sync_video',
-                'current_time': 0,
+                'current_time': current_time,
             }
         )
         return JsonResponse({'status': 'ok'})

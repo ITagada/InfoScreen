@@ -4,19 +4,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let videoStarted = false;
     let videoElement;
     let syncInterval;
-    let lastCommand = null;
     let lastSyncTime = 0;
-    let lastReceivedTime = 0;
-    let lastVideoTime = 0;
 
     function createSocket() {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            console.log('Socket already open');
+            return; // Прекращаем создание нового соединения, если уже есть открытое
+        }
+
         socket = new WebSocket('ws://' + window.location.host + '/ws/video_sync/');
 
         socket.onopen = function () {
             console.log('VideoSocket is open');
-            socket.send(JSON.stringify({
-                'command': 'get_state'
-            }));
         }
 
         socket.onerror = function (error) {
@@ -27,58 +26,76 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = JSON.parse(e.data);
             const command = data.command;
 
-            if (command === "state") {
-                if (videoStarted && (lastCommand === "start" || lastCommand === "sync")) {
-                    socket.send(JSON.stringify({
-                        'command': 'start',
-                        'startTime': lastVideoTime,
-                    }));
-                } else if (command === "stop") {
-                    removeVideoElement();
-                }
-            } else if (command === "start") {
-                if (!videoStarted) {
-                    createVideoElement();
-                }
+            console.log(`Received command: ${command}`); // Логи для отладки
 
-                const startTime = data.start_time;
-                const serverTime = data.server_time;
-                const clientTime = Date.now() / 1000;
-                const syncStartTime = startTime + (clientTime - serverTime);
-                videoElement.currentTime = syncStartTime;
-                videoElement.muted = true;
-                videoElement.play().then(() => {
-                    videoStarted = true;
-                }).catch((error) => {
-                    console.error('Autoplay error:', error);
-                });
-                lastCommand = 'start';
-                lastSyncTime = syncStartTime;
+            if (command === "get_state") {
+                handleState(data);
+            } else if (command === "start") {
+                handleStart(data);
             } else if (command === "sync" && videoStarted && !videoElement.paused) {
-                const currentTime = data.current_time;
-                const diff = Math.abs(videoElement.currentTime - currentTime);
-                if (diff > 0.5) {
-                    videoElement.pause();
-                    videoElement.currentTime = currentTime;
-                    videoElement.play().then(() => {
-                        console.log('Video synced and started again');
-                    }).catch((error) => {
-                        console.error('Resyncing error:', error);
-                    });
-                    lastReceivedTime = currentTime;
-                }
+                handleSync(data);
             } else if (command === "stop" && videoStarted) {
-                console.log('Stop command received');
-                removeVideoElement();
-                lastCommand = 'stop';
+                handleStop();
             }
         };
 
-        socket.onclose = function () {
-            console.log('VideoSocket closed');
+        socket.onclose = function (event) {
+            console.log('VideoSocket closed', event);
             clearInterval(syncInterval);
-            setTimeout(createSocket, 1000); // Пауза перед повторным подключением
+            setTimeout(createSocket, 10000); // Пауза перед повторным подключением
         };
+    }
+
+    function handleState(data) {
+        console.log(`Handling state: ${data.status}`); // Логи для отладки
+
+        const status = data.status;
+
+        if (status === 'start') {
+            handleStart(data);
+        } else if (status === 'stop') {
+            handleStop();
+        }
+    }
+
+    function handleStart(data) {
+        if (!videoStarted) {
+            createVideoElement();
+        }
+
+        const startTime = data.start_time;
+        const serverTime = data.server_time;
+        const clientTime = Date.now() / 1000;
+        const syncStartTime = startTime + (clientTime - serverTime);
+        videoElement.currentTime = syncStartTime;
+        videoElement.muted = true;
+        videoElement.play().then(() => {
+            videoStarted = true;
+        }).catch((error) => {
+            console.error('Autoplay error:', error);
+        });
+        lastSyncTime = syncStartTime;
+    }
+
+    function handleSync(data) {
+        console.log(`Handling sync: currentTime = ${data.current_time}`);
+        const currentTime = data.current_time;
+        const diff = Math.abs(videoElement.currentTime - currentTime);
+
+        if (diff > 0.5) {
+            videoElement.pause();
+            videoElement.currentTime = currentTime;
+            videoElement.play().then(() => {
+                console.log('Video synced and started again');
+            }).catch((error) => {
+                console.error('Resyncing error:', error);
+            });
+        }
+    }
+
+    function handleStop() {
+        console.log('Handling stop');
+        removeVideoElement();
     }
 
     createSocket();
@@ -98,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
             videoElement.src = '/media/video/sample-30s.mp4';
             videoElement.controls = true;
 
-            videoElement.addEventListener('ended', function () {
+            videoElement.onEnded = function() {
                 if (videoStarted) {
                     videoElement.currentTime = 0;
                     videoElement.addEventListener('seeked', function onSeeked() {
@@ -106,14 +123,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         videoElement.play();
                     });
                 }
-            });
+            };
 
-            videoElement.addEventListener('timeupdate', function () {
+            videoElement.onTimeUpdate = function() {
                 if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
                     const currentTime = videoElement.currentTime;
                     const now = Date.now();
 
-                    if (now - lastSyncTime > 1000) {
+                    if (now - lastSyncTime > 10000) {
                         lastSyncTime = now;
                         socket.send(JSON.stringify({
                             'command': 'sync',
@@ -121,7 +138,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }));
                     }
                 }
-            });
+            };
+
+            videoElement.addEventListener('ended', videoElement.onEnded);
+            videoElement.addEventListener('timeupdate', videoElement.onTimeUpdate);
 
             videoContainer.appendChild(videoElement);
             videoContainerCreated = true;
@@ -134,27 +154,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function removeVideoElement() {
         if (videoContainerCreated) {
             videoElement.pause();
+            videoElement.removeEventListener('ended', videoElement.onEnded); // Убираем обработчик события
+            videoElement.removeEventListener('timeupdate', videoElement.onTimeUpdate); // Убираем обработчик события
             videoElement.remove();
             videoElement = null;
             videoContainerCreated = false;
             videoStarted = false;
         }
     }
-
-    syncInterval = setInterval(function () {
-        if (videoStarted && socket.readyState === WebSocket.OPEN) {
-            const currentTime = videoElement.currentTime;
-            const now = Date.now();
-
-            if (now - lastSyncTime > 1000) {
-                lastSyncTime = now;
-                socket.send(JSON.stringify({
-                    'command': 'sync',
-                    'current_time': currentTime
-                }));
-            }
-        }
-    }, 1000);
 
     window.addEventListener('beforeunload', function () {
         clearInterval(syncInterval);
