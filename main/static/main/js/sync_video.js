@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const currentTime = videoElement.currentTime;
                     const now = Date.now();
 
-                    if (now - lastSyncTime > 10000) {
+                    if (now - lastSyncTime > 5000) {
                         lastSyncTime = now;
                         socket.send(JSON.stringify({
                             'command': 'sync',
