@@ -26,6 +26,8 @@ temperature = {'inside': 22, 'outside': 31}
 global_sw = None
 global_sh = None
 
+GLOBAL_STATUS_KEY = 'global_status'
+
 # Функция парсер данных xml, которые будут поступать от главного сервера
 def parse_station(station):
     name = station.attrib.get('name')
@@ -213,12 +215,17 @@ def send_play_video_command(request):
     try:
         logger.info(f'Sending play video command')
         server_time = time.time()
+        global_status = {
+            'status': 'start',
+            'start_time': 0,
+            'server_time': server_time,
+        }
+        set_global_status(global_status)
         async_to_sync(channel_layer.group_send)(
             'video_sync_group',
             {
                 'type': 'play_video',
-                'start_time': 0,
-                'server_time': server_time,
+                **global_status,
             }
         )
         return JsonResponse({'status': 'ok'})
@@ -232,10 +239,17 @@ def send_stop_video_command(request):
 
     try:
         logger.info(f'Sending stop video command')
+        global_status = {
+            'status': 'stop',
+            'start_time': None,
+            'server_time': None,
+        }
+        set_global_status(global_status)
         async_to_sync(channel_layer.group_send)(
             'video_sync_group',
             {
                 'type': 'stop_video',
+                **global_status,
             }
         )
         return JsonResponse({'status': 'ok'})
@@ -262,3 +276,13 @@ def send_sync_video_command(request):
         logger.error(f'Command send failed: {e}')
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
+
+def get_global_status():
+    return cache.get(GLOBAL_STATUS_KEY, {
+        'status': None,
+        'start_time': None,
+        'server_time': None,
+    })
+
+def set_global_status(status_data):
+    cache.set(GLOBAL_STATUS_KEY, status_data, timeout=None)

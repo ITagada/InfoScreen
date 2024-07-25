@@ -6,6 +6,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.core.cache import cache
 
+from views import get_global_status, set_global_status
+
+
 class ScreenConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
@@ -88,7 +91,7 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
             cache.set('client_times_keys', keys, timeout=None)
 
         # Отправляем последнее состояние всем новым клиентам
-        last_state = cache.get(self.client_cache_key)
+        last_state = get_global_status()
         await self.send(text_data=json.dumps({
             'command': 'get_state',
             **last_state  # Добавляем последнее состояние
@@ -131,12 +134,17 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         if command == "start":
             start_time = data.get("start_time", 0)
             server_time = time.time()
+            global_status = {
+                'status': 'start',
+                'start_time': start_time,
+                'server_time': server_time,
+            }
+            set_global_status(global_status)
             await self.channel_layer.group_send(
                 'video_sync_group',
                 {
                     'type': 'play_video',
-                    'start_time': start_time,
-                    'server_time': server_time,
+                    **global_status,
                 }
             )
         elif command == "sync":
@@ -149,26 +157,25 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
             self.cleanup_inactive_clients()
 
-            client_times = self.get_all_client_times()
-
-            max_time = max(client_times.values(), default=current_time)
-            min_time = min(client_times.values(), default=current_time)
-
-            if abs(max_time - min_time) > 0.3:
-                await self.channel_layer.group_send(
-                    'video_sync_group',
-                    {
-                        'type': 'sync_video',
-                        'current_time': max_time,
-                    }
-                )
-            print('Its receive', max_time, min_time)
-            # print('Fullie: ', client_times)
         elif command == "stop":
+            global_status = {
+                'status': 'stop',
+                'start_time': None,
+                'server_time': None,
+            }
+            set_global_status(global_status)
             await self.channel_layer.group_send(
                 'video_sync_group',
                 {
                     'type': 'stop_video',
+                    **global_status,
+                }
+            )
+        elif command == "reset_time":
+            await self.channel_layer.group_send(
+                'video_sync_group',
+                {
+                    'type': 'reset_video_time',
                 }
             )
         elif command == "get_state":
@@ -178,14 +185,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
     async def play_video(self, event):
         start_time = event["start_time"]
         server_time = event["server_time"]
-        last_state = cache.get(self.client_cache_key)
-        if last_state:
-            last_state.update({
-                'status': 'start',
-                'start_time': start_time,
-                'server_time': server_time,
-            })
-            cache.set(self.client_cache_key, last_state, timeout=None)
 
         await self.send(text_data=json.dumps({
             "command": "start",
@@ -195,9 +194,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
     async def sync_video(self, event):
         current_time = event["current_time"]
-        last_state = cache.get(self.client_cache_key)
-        if last_state:
-            cache.set(self.client_cache_key, last_state, timeout=None)
 
         await self.send(text_data=json.dumps({
             "command": "sync",
@@ -205,15 +201,14 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         }))
 
     async def stop_video(self, event):
-        last_state = cache.get(self.client_cache_key)
-        if last_state:
-            last_state.update({
-                'status': 'stop',
-                'start_time': None,
-                'server_time': None,
-            })
-            cache.set(self.client_cache_key, last_state, timeout=None)
 
         await self.send(text_data=json.dumps({
             "command": "stop",
+        }))
+
+    async def reset_video_time(self, event):
+
+        await self.send(text_data=json.dumps({
+            "command": "reset_time",
+            "current_time": 0
         }))

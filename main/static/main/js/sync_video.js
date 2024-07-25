@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', function() {
             handleStart(data);
         } else if (status === 'stop') {
             handleStop();
+        } else if (status === 'sync') {
+            handleStart(data)
         }
     }
 
@@ -121,6 +123,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     videoElement.addEventListener('seeked', function onSeeked() {
                         videoElement.removeEventListener('seeked', onSeeked);
                         videoElement.play();
+                        socket.send(JSON.stringify({
+                            command: 'reset_time',
+                        }));
                     });
                 }
             };
