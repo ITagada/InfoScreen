@@ -6,7 +6,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.core.cache import cache
 
-from views import get_global_status, set_global_status
+from .views import get_global_status, set_global_status
 
 
 class ScreenConsumer(AsyncWebsocketConsumer):

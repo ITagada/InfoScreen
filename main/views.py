@@ -9,15 +9,16 @@ from django.http import JsonResponse
 from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from celery import shared_task
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.propagate = True
 
-tree = ET.parse('/home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt')
+tree = ET.parse('/app/Nekras_Nizheg.bnt')
 root = tree.getroot()
 
-text_tree = ET.parse('/home/andrew_q/PycharmProjects/BIT/textset3_3.bit')
+text_tree = ET.parse('/app/textset3_3.bit')
 text_root = text_tree.getroot()
 
 # Иммитация распаршенных данных от главного сервера
@@ -286,3 +287,27 @@ def get_global_status():
 
 def set_global_status(status_data):
     cache.set(GLOBAL_STATUS_KEY, status_data, timeout=None)
+
+@shared_task
+def check_and_sync_video():
+    global_status = cache.get('global_status', {})
+    if global_status.get('status') != 'stop':
+        keys = cache.get('client_times_keys', [])
+        client_times = {}
+        for key in keys:
+            client_data = cache.get(key)
+            if client_data and client_data['current_time'] is not None:
+                client_times[key] = client_data['current_time']
+
+        max_time = max(client_times.values())
+        min_time = min(client_times.values())
+
+        if abs(max_time - min_time) > 0.3:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'video_sync_group',
+                {
+                    'type': 'sync_video',
+                    'current_time': max_time,
+                }
+            )

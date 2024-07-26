@@ -1,0 +1,41 @@
+version: '3.10'
+
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - /home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
+      - /home/andrew_q/PycharmProjects/BIT/textset3_3.bit:/app/textset3_3.bit
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - worker
+      - beat
+
+  worker:
+    build: .
+    command: celery -A infoscreen worker --loglevel=info
+    volumes:
+      - .:/app
+      - /home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
+      - /home/andrew_q/PycharmProjects/BIT/textset3_3.bit:/app/textset3_3.bit
+    depends_on:
+      - redis
+
+  beat:
+    build: .
+    command: celery -A infoscreen beat --loglevel=info
+    volumes:
+      - .:/app
+      - /home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
+      - /home/andrew_q/PycharmProjects/BIT/textset3_3.bit:/app/textset3_3.bit
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
