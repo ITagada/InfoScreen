@@ -1,6 +1,5 @@
 
 from celery import shared_task
-import time
 
 @shared_task
 def check_and_sync_video():
@@ -20,6 +19,7 @@ def check_and_sync_video():
             if current_time is not None:
                 max_time = max(max_time, current_time)
                 min_time = min(min_time, current_time)
+        print(f'Client data: {client_data}')
 
     # Проверка рассинхронизации
     if abs(max_time - min_time) > 0.3:
@@ -36,6 +36,7 @@ def check_and_sync_video():
                 'current_time': max_time,
             }
         )
+    # print(f'Times: {client_times_keys}')
 
 # Эта задача будет запускаться каждые 5 секунд, если последняя команда на сокете не stop.
 @shared_task

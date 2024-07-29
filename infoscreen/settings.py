@@ -184,7 +184,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULE = {
     'schelude_check_and_sync_video': {
-        'task': 'main.tasks.schelude_check_and_sync_video',
+        'task': 'main.tasks.schedule_check_and_sync_video',
         'schedule': 5.0,
     },
 }

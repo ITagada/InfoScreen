@@ -1,9 +1,5 @@
-FROM ubuntu:latest
-LABEL authors="andrew_q"
-
-ENTRYPOINT ["top", "-b"]
-
 FROM python:3.10-slim
+LABEL authors="andrew_q"
 
 WORKDIR /app
 
