@@ -1,3 +1,4 @@
+import time
 
 from celery import shared_task
 
@@ -15,10 +16,14 @@ def check_and_sync_video():
     for key in client_times_keys:
         client_data = cache.get(key)
         if client_data:
+            client_send_time = client_data.get('client_time')
+            server_receive_time = client_data.get('server_receive_time')
             current_time = client_data.get('current_time')
-            if current_time is not None:
-                max_time = max(max_time, current_time)
-                min_time = min(min_time, current_time)
+            if current_time is not None and client_send_time is not None:
+                round_trip_delay = time.time() - client_send_time
+                adjusted_time = current_time + (round_trip_delay / 2)
+                max_time = max(max_time, adjusted_time)
+                min_time = min(min_time, adjusted_time)
         print(f'Client data: {client_data}')
 
     # Проверка рассинхронизации

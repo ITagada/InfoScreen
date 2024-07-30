@@ -129,6 +129,8 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
+        if 'syncData' in data:
+            data = data['syncData']
         command = data.get("command")
 
         if command == "start":
@@ -148,12 +150,18 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
                 }
             )
         elif command == "sync":
+            client_send_time = data.get("client_time")
+            server_receive_time = time.time()
             current_time = data.get("current_time")
             client_data = cache.get(self.client_cache_key)
             if client_data:
-                client_data['current_time'] = current_time
+                if current_time is not None:
+                    client_data['current_time'] = current_time
                 client_data['last_activity'] = time.time()
+                client_data['client_time'] = client_send_time
+                client_data['server_time'] = server_receive_time
                 cache.set(self.client_cache_key, client_data, timeout=None)
+                # print(f'Updated client data: {client_data}')
 
             self.cleanup_inactive_clients()
 

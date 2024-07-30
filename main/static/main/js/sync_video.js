@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         socket.onmessage = function (e) {
+            console.log('Received raw message:', e.data);
             const data = JSON.parse(e.data);
             const command = data.command;
 
@@ -135,12 +136,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     const currentTime = videoElement.currentTime;
                     const now = Date.now();
 
-                    if (now - lastSyncTime > 5000) {
+                    if (now - lastSyncTime > 1000) {
                         lastSyncTime = now;
-                        socket.send(JSON.stringify({
+                        const syncData = {
                             'command': 'sync',
-                            'current_time': currentTime
-                        }));
+                            'current_time': currentTime,
+                            'client_time': now / 1000,
+                        };
+                        socket.send(JSON.stringify({syncData}));
                     }
                 }
             };
