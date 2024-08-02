@@ -71,24 +71,25 @@ class ScreenConsumer(AsyncWebsocketConsumer):
 class SyncVideoConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
-        self.client_cache_key = f'client_{self.channel_name}'
+        self.client_cache_key = self.channel_name
+        # print(self.client_cache_key)
         await self.channel_layer.group_add('video_sync_group', self.channel_name)
         await self.accept()
 
         # Инициализируем пустое состояние клиента в кэше
-        cache.set(self.client_cache_key, {
-            'status': None,
-            'start_time': None,
+        client_data = cache.get('client_data', {})
+        initial_data = {
+            'start_time': 0,
             'server_time': None,
-            'current_time': None,
+            'current_time': 0,
+            'client_time': None,
             'last_activity': time.time()
-        }, timeout=None)
+        }
+        client_data[self.client_cache_key] = initial_data
+        cache.set('client_data', client_data, timeout=None)
+        # print(f'Кэш записанный при коннекте: {cache.get(self.client_cache_key)}')
 
-        # Добавляем ключ клиента в общий список ключей
-        keys = cache.get('client_times_keys', [])
-        if self.client_cache_key not in keys:
-            keys.append(self.client_cache_key)
-            cache.set('client_times_keys', keys, timeout=None)
+        self.cleanup_inactive_clients()
 
         # Отправляем последнее состояние всем новым клиентам
         last_state = get_global_status()
@@ -99,33 +100,38 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         # Удаляем ключ клиента из общего списка ключей
-        keys = cache.get('client_times_keys', [])
-        if self.client_cache_key in keys:
-            keys.remove(self.client_cache_key)
-            cache.set('client_times_keys', keys, timeout=None)
+        client_data = cache.get('client_data', {})
+        if self.client_cache_key in client_data:
+            del client_data[self.client_cache_key]
+            cache.set('client_data', client_data, timeout=None)
 
-        # Удаляем состояние клиента из кэша
-        cache.delete(self.client_cache_key)
         await self.channel_layer.group_discard('video_sync_group', self.channel_name)
 
-    def get_all_client_times(self):
-        keys = cache.get('client_times_keys', [])
-        client_times = {}
-        for key in keys:
-            client_data = cache.get(key)
-            if client_data is not None and client_data['current_time'] is not None:
-                client_times[key] = client_data['current_time']
-        return client_times
+    # def get_all_client_times(self):
+    #     client_data = cache.get('client_data', {})
+    #     client_times = {}
+    #     for key, data in client_data.items():
+    #         if data is not None and data['current_time'] is not None:
+    #             client_times[key] = data['current_time']
+    #     print(f'Список всех подключенных клиентов: {client_times}')
+    #     return client_times
 
     def cleanup_inactive_clients(self, inactivity_threshold=20):
-        keys = cache.get('client_times_keys', [])
+        # Получаем текущие данные клиентов из кэша
+        client_data = cache.get('client_data', {})
         current_time = time.time()
-        for key in keys:
-            client_data = cache.get(key)
-            if client_data and (current_time - client_data.get('last_activity', 0)) > inactivity_threshold:
-                cache.delete(key)
-                keys.remove(key)
-        cache.set('client_times_keys', keys, timeout=None)
+
+        # Определяем, какие данные нужно удалить (по времени последней активности)
+        keys_to_remove = [key for key, data in client_data.items()
+                          if (current_time - data.get('last_activity')) > inactivity_threshold]
+
+        # Удаляем устаревшие данные из словаря
+        for key in keys_to_remove:
+            del client_data[key]
+
+        # Обновляем кэш с оставшимися данными
+        cache.set('client_data', client_data, timeout=None)
+        # print(f'Клиенты после очистки: {list(client_data.keys())}')
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -133,66 +139,115 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
             data = data['syncData']
         command = data.get("command")
 
+        # print(f'IDE Receive: {command}, data: {data}')
+
         if command == "start":
-            start_time = data.get("start_time", 0)
-            server_time = time.time()
-            global_status = {
-                'status': 'start',
-                'start_time': start_time,
-                'server_time': server_time,
-            }
-            set_global_status(global_status)
-            await self.channel_layer.group_send(
-                'video_sync_group',
-                {
-                    'type': 'play_video',
-                    **global_status,
-                }
-            )
+            await self.handle_start(data)
         elif command == "sync":
-            client_send_time = data.get("client_time")
-            server_receive_time = time.time()
-            current_time = data.get("current_time")
-            client_data = cache.get(self.client_cache_key)
-            if client_data:
-                if current_time is not None:
-                    client_data['current_time'] = current_time
-                client_data['last_activity'] = time.time()
-                client_data['client_time'] = client_send_time
-                client_data['server_time'] = server_receive_time
-                cache.set(self.client_cache_key, client_data, timeout=None)
-                # print(f'Updated client data: {client_data}')
-
-            self.cleanup_inactive_clients()
-
+            await self.handle_sync(data)
         elif command == "stop":
-            global_status = {
-                'status': 'stop',
-                'start_time': None,
-                'server_time': None,
-            }
-            set_global_status(global_status)
-            await self.channel_layer.group_send(
-                'video_sync_group',
-                {
-                    'type': 'stop_video',
-                    **global_status,
-                }
-            )
+            await self.handle_stop()
         elif command == "reset_time":
-            await self.channel_layer.group_send(
-                'video_sync_group',
-                {
-                    'type': 'reset_video_time',
-                }
-            )
+            await self.handle_reset_time()
         elif command == "get_state":
-            last_state = cache.get(self.client_cache_key)
-            await self.send(text_data=json.dumps(last_state))
+            await self.handle_get_state()
+        else:
+            await self.handle_sync(data)
+
+    async def handle_start(self, data):
+        start_time = data.get("start_time", 0)
+        server_time = time.time()
+        global_status = {
+            'status': 'start',
+            'start_time': start_time,
+            'server_time': server_time,
+        }
+        set_global_status(global_status)
+        print(f'Start Time: {get_global_status()}')
+        await self.channel_layer.group_send(
+            'video_sync_group',
+            {
+                'type': 'play_video',
+                **global_status,
+            }
+        )
+
+    async def handle_sync(self, data):
+        client_send_time = data.get("client_time")
+        current_time = data.get("current_time")
+        # print(f'sync data {current_time}, {client_send_time}, {server_receive_time}, {server_receive_time}')
+        client_data = cache.get('client_data', {})
+
+        if client_send_time is not None and current_time is not None:
+            client_data[self.client_cache_key] = {
+                'current_time': current_time,
+                'client_time': client_send_time,
+                'server_time': time.time(),
+                'last_activity': time.time()
+            }
+            cache.set('client_data', client_data, timeout=None)
+
+        print(f'Updated client data: {self.client_cache_key} -> {client_data[self.client_cache_key]}')
+
+        # self.cleanup_inactive_clients()
+
+        # await self.channel_layer.group_send(
+        #     'video_sync_group',
+        #     {
+        #         'type': 'sync_video',
+        #         'current_time': current_time,
+        #         'client_time': client_send_time,
+        #         'server_time': server_receive_time,
+        #     }
+        # )
+
+    # async def update_client_data(self, current_time, client_time):
+    #     client_data = cache.get('client_data', {})
+    #
+    #     client_data[self.client_cache_key] = {
+    #         'start_time': 0,
+    #         'current_time': current_time,
+    #         'client_time': client_time,
+    #         'server_time': time.time(),
+    #         'last_activity': time.time()
+    #     }
+    #
+    #     cache.set('client_data', client_data, timeout=None)
+
+    async def handle_stop(self):
+        global_status = {
+            'status': 'stop',
+            'start_time': None,
+            'server_time': None,
+        }
+        set_global_status(global_status)
+        print('handle stop func')
+        await self.channel_layer.group_send(
+            'video_sync_group',
+            {
+                'type': 'stop_video',
+                **global_status,
+            }
+        )
+
+    async def handle_reset_time(self):
+        print('handle reset time func')
+        await self.channel_layer.group_send(
+            'video_sync_group',
+            {
+                'type': 'reset_video_time',
+            }
+        )
+
+    async def handle_get_state(self):
+        last_state = cache.get(self.client_cache_key)
+        await self.send(text_data=json.dumps(last_state))
 
     async def play_video(self, event):
+        self.cleanup_inactive_clients()
         start_time = event["start_time"]
         server_time = event["server_time"]
+        # print('NOT handle func start')
 
         await self.send(text_data=json.dumps({
             "command": "start",
@@ -202,13 +257,19 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
     async def sync_video(self, event):
         current_time = event["current_time"]
+        server_receive_time = event["server_time"]
+        client_time = event["client_time"]
+        # print('NOT handle func sync')
 
         await self.send(text_data=json.dumps({
             "command": "sync",
-            "current_time": current_time
+            "current_time": current_time,
+            "server_time": server_receive_time,
+            "client_time": client_time,
         }))
 
     async def stop_video(self, event):
+        # print('NOT handle func stop')
 
         await self.send(text_data=json.dumps({
             "command": "stop",

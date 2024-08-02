@@ -16,10 +16,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         socket.onopen = function () {
             console.log('VideoSocket is open');
+            if (!syncInterval) {
+                syncInterval = setInterval(syncVideo, 1000);
+            }
         }
 
         socket.onerror = function (error) {
             console.error('VideoSocket error:', error);
+            clearInterval(syncInterval);
+            syncInterval = null;
+            setTimeout(createSocket, 10000);
         };
 
         socket.onmessage = function (e) {
@@ -43,9 +49,24 @@ document.addEventListener('DOMContentLoaded', function() {
         socket.onclose = function (event) {
             console.log('VideoSocket closed', event);
             clearInterval(syncInterval);
+            syncInterval = null;
             setTimeout(createSocket, 10000); // Пауза перед повторным подключением
         };
     }
+
+    function syncVideo() {
+        if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
+            const currentTime = videoElement.currentTime;
+            const now = Date.now();
+
+            const syncData = {
+                'current_time': currentTime,
+                'client_time': now / 1000,
+            };
+            console.log(`Sending sync data: ${JSON.stringify(syncData)}`);
+            socket.send(JSON.stringify(syncData));
+        }
+    };
 
     function handleState(data) {
         console.log(`Handling state: ${data.status}`); // Логи для отладки
@@ -67,33 +88,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const startTime = data.start_time;
-        const serverTime = data.server_time;
-        const clientTime = Date.now() / 1000;
-        const syncStartTime = startTime + (clientTime - serverTime);
-        videoElement.currentTime = syncStartTime;
+        videoElement.currentTime = startTime;
         videoElement.muted = true;
         videoElement.play().then(() => {
             videoStarted = true;
         }).catch((error) => {
             console.error('Autoplay error:', error);
         });
-        lastSyncTime = syncStartTime;
+        lastSyncTime = startTime;
     }
 
     function handleSync(data) {
-        console.log(`Handling sync: currentTime = ${data.current_time}`);
-        const currentTime = data.current_time;
-        const diff = Math.abs(videoElement.currentTime - currentTime);
-
-        if (diff > 0.5) {
-            videoElement.pause();
-            videoElement.currentTime = currentTime;
-            videoElement.play().then(() => {
-                console.log('Video synced and started again');
-            }).catch((error) => {
-                console.error('Resyncing error:', error);
-            });
-        }
+        console.log('Received sync message:', data.current_time, data.server_time);
+        const now = Date.now() / 1000;
+        const serverTime = data.server_time;
+        const currentTime = data.current_time + (now - serverTime);
+        console.log(`Received sync time:${currentTime}`);
+        videoElement.currentTime = currentTime;
+        videoElement.play().then(() => {
+            console.log('Video element synced and started at: ', videoElement.currentTime);
+        }).catch((error) => {
+            console.error('Resyncing error:', error);
+        });
     }
 
     function handleStop() {
@@ -128,23 +144,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             command: 'reset_time',
                         }));
                     });
-                }
-            };
-
-            videoElement.onTimeUpdate = function() {
-                if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
-                    const currentTime = videoElement.currentTime;
-                    const now = Date.now();
-
-                    if (now - lastSyncTime > 1000) {
-                        lastSyncTime = now;
-                        const syncData = {
-                            'command': 'sync',
-                            'current_time': currentTime,
-                            'client_time': now / 1000,
-                        };
-                        socket.send(JSON.stringify({syncData}));
-                    }
                 }
             };
 
