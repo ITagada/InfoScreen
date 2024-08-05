@@ -72,7 +72,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.client_cache_key = self.channel_name
-        # print(self.client_cache_key)
         await self.channel_layer.group_add('video_sync_group', self.channel_name)
         await self.accept()
 
@@ -81,13 +80,12 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         initial_data = {
             'start_time': 0,
             'server_time': None,
-            'current_time': 0,
+            'current_time': None,
             'client_time': None,
             'last_activity': time.time()
         }
         client_data[self.client_cache_key] = initial_data
         cache.set('client_data', client_data, timeout=None)
-        # print(f'Кэш записанный при коннекте: {cache.get(self.client_cache_key)}')
 
         self.cleanup_inactive_clients()
 
@@ -107,15 +105,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
         await self.channel_layer.group_discard('video_sync_group', self.channel_name)
 
-    # def get_all_client_times(self):
-    #     client_data = cache.get('client_data', {})
-    #     client_times = {}
-    #     for key, data in client_data.items():
-    #         if data is not None and data['current_time'] is not None:
-    #             client_times[key] = data['current_time']
-    #     print(f'Список всех подключенных клиентов: {client_times}')
-    #     return client_times
-
     def cleanup_inactive_clients(self, inactivity_threshold=20):
         # Получаем текущие данные клиентов из кэша
         client_data = cache.get('client_data', {})
@@ -131,15 +120,12 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
 
         # Обновляем кэш с оставшимися данными
         cache.set('client_data', client_data, timeout=None)
-        # print(f'Клиенты после очистки: {list(client_data.keys())}')
 
     async def receive(self, text_data):
         data = json.loads(text_data)
         if 'syncData' in data:
             data = data['syncData']
         command = data.get("command")
-
-        # print(f'IDE Receive: {command}, data: {data}')
 
         if command == "start":
             await self.handle_start(data)
@@ -163,7 +149,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
             'server_time': server_time,
         }
         set_global_status(global_status)
-        print(f'Start Time: {get_global_status()}')
         await self.channel_layer.group_send(
             'video_sync_group',
             {
@@ -175,7 +160,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
     async def handle_sync(self, data):
         client_send_time = data.get("client_time")
         current_time = data.get("current_time")
-        # print(f'sync data {current_time}, {client_send_time}, {server_receive_time}, {server_receive_time}')
         client_data = cache.get('client_data', {})
 
         if client_send_time is not None and current_time is not None:
@@ -187,33 +171,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
             }
             cache.set('client_data', client_data, timeout=None)
 
-        print(f'Updated client data: {self.client_cache_key} -> {client_data[self.client_cache_key]}')
-
-        # self.cleanup_inactive_clients()
-
-        # await self.channel_layer.group_send(
-        #     'video_sync_group',
-        #     {
-        #         'type': 'sync_video',
-        #         'current_time': current_time,
-        #         'client_time': client_send_time,
-        #         'server_time': server_receive_time,
-        #     }
-        # )
-
-    # async def update_client_data(self, current_time, client_time):
-    #     client_data = cache.get('client_data', {})
-    #
-    #     client_data[self.client_cache_key] = {
-    #         'start_time': 0,
-    #         'current_time': current_time,
-    #         'client_time': client_time,
-    #         'server_time': time.time(),
-    #         'last_activity': time.time()
-    #     }
-    #
-    #     cache.set('client_data', client_data, timeout=None)
-
     async def handle_stop(self):
         global_status = {
             'status': 'stop',
@@ -221,7 +178,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
             'server_time': None,
         }
         set_global_status(global_status)
-        print('handle stop func')
         await self.channel_layer.group_send(
             'video_sync_group',
             {
@@ -231,7 +187,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         )
 
     async def handle_reset_time(self):
-        print('handle reset time func')
         await self.channel_layer.group_send(
             'video_sync_group',
             {
@@ -247,7 +202,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         self.cleanup_inactive_clients()
         start_time = event["start_time"]
         server_time = event["server_time"]
-        # print('NOT handle func start')
 
         await self.send(text_data=json.dumps({
             "command": "start",
@@ -259,7 +213,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         current_time = event["current_time"]
         server_receive_time = event["server_time"]
         client_time = event["client_time"]
-        # print('NOT handle func sync')
 
         await self.send(text_data=json.dumps({
             "command": "sync",
@@ -269,7 +222,6 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
         }))
 
     async def stop_video(self, event):
-        # print('NOT handle func stop')
 
         await self.send(text_data=json.dumps({
             "command": "stop",

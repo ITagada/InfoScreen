@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         socket.onmessage = function (e) {
-            console.log('Received raw message:', e.data);
             const data = JSON.parse(e.data);
             const command = data.command;
 
@@ -63,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 'current_time': currentTime,
                 'client_time': now / 1000,
             };
-            console.log(`Sending sync data: ${JSON.stringify(syncData)}`);
             socket.send(JSON.stringify(syncData));
         }
     };
@@ -99,21 +97,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleSync(data) {
-        console.log('Received sync message:', data.current_time, data.server_time);
         const now = Date.now() / 1000;
         const serverTime = data.server_time;
-        const currentTime = data.current_time + (now - serverTime);
-        console.log(`Received sync time:${currentTime}`);
-        videoElement.currentTime = currentTime;
-        videoElement.play().then(() => {
-            console.log('Video element synced and started at: ', videoElement.currentTime);
-        }).catch((error) => {
-            console.error('Resyncing error:', error);
-        });
+        const estimatedClientTime = data.current_time + (now - serverTime);
+
+        // console.log('Received current time:', currentTime, videoElement.currentTime);
+        const timeDifference = Math.abs(videoElement.currentTime - estimatedClientTime);
+
+        if (timeDifference > 0.1) {
+            videoElement.currentTime = estimatedClientTime;
+
+            videoElement.addEventListener('seeked', function onSeeked() {
+               videoElement.removeEventListener('seeked', onSeeked);
+               videoElement.play().then(() => {
+                   // console.log('Video element synced and started at: ', videoElement.currentTime);
+               }).catch((error) => {
+                   console.error('Resycing error: ', error);
+               });
+            });
+        }
     }
 
     function handleStop() {
-        console.log('Handling stop');
         removeVideoElement();
     }
 
