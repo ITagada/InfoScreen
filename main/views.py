@@ -32,6 +32,10 @@ GLOBAL_STATUS_KEY = 'global_status'
 # Функция парсер данных xml, которые будут поступать от главного сервера
 def parse_station(station):
     name = station.attrib.get('name')
+    side = station.attrib.get('side')
+    up = station.attrib.get('up')
+    skip = station.attrib.get('skip')
+    pos = station.attrib.get('pos')
     transitions = []
     pname = name.split('|')
     name = pname[0]
@@ -214,7 +218,6 @@ def send_play_video_command(request):
     channel_layer = get_channel_layer()
 
     try:
-        # logger.info(f'Sending play video command')
         server_time = time.time()
         global_status = {
             'status': 'start',
@@ -226,7 +229,6 @@ def send_play_video_command(request):
             'type': 'play_video',
             **global_status,
         }
-        # logger.info(f'Sending play video message {message}')
         async_to_sync(channel_layer.group_send)('video_sync_group', message)
         return JsonResponse({'status': 'ok'})
     except Exception as e:
@@ -238,7 +240,6 @@ def send_stop_video_command(request):
     channel_layer = get_channel_layer()
 
     try:
-        # logger.info(f'Sending stop video command')
         global_status = {
             'status': 'stop',
             'start_time': None,
@@ -249,32 +250,12 @@ def send_stop_video_command(request):
             'type': 'stop_video',
             **global_status,
         }
-        # logger.info(f'Sending play video message {message}')
         async_to_sync(channel_layer.group_send)('video_sync_group', message)
         return JsonResponse({'status': 'ok'})
     except Exception as e:
         logger.error(f'Command send failed: {e}')
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
-
-# def send_sync_video_command(request):
-#     channel_layer = get_channel_layer()
-#
-#     try:
-#         logger.info(f'Sending sync video command')
-#         current_time = float(request.GET.get('current_time', 0))
-#         async_to_sync(channel_layer.group_send)(
-#             'video_sync_group',
-#             {
-#                 'type': 'sync_video',
-#                 'current_time': current_time,
-#             }
-#         )
-#         return JsonResponse({'status': 'ok'})
-#     except Exception as e:
-#         logger.error(f'Command send failed: {e}')
-#         return JsonResponse({'status': 'fail', 'message': str(e)})
-#     return render(request, 'main/send-update-route-command.html')
 
 def get_global_status():
     return cache.get(GLOBAL_STATUS_KEY, {
@@ -285,27 +266,3 @@ def get_global_status():
 
 def set_global_status(status_data):
     cache.set(GLOBAL_STATUS_KEY, status_data, timeout=None)
-
-# @shared_task
-# def check_and_sync_video():
-#     global_status = cache.get('global_status', {})
-#     if global_status.get('status') != 'stop':
-#         keys = cache.get('client_times_keys', [])
-#         client_times = {}
-#         for key in keys:
-#             client_data = cache.get(key)
-#             if client_data and client_data['current_time'] is not None:
-#                 client_times[key] = client_data['current_time']
-#
-#         max_time = max(client_times.values())
-#         min_time = min(client_times.values())
-#
-#         if abs(max_time - min_time) > 0.3:
-#             channel_layer = get_channel_layer()
-#             async_to_sync(channel_layer.group_send)(
-#                 'video_sync_group',
-#                 {
-#                     'type': 'sync_video',
-#                     'current_time': max_time,
-#                 }
-#             )

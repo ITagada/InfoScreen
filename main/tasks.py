@@ -45,6 +45,8 @@ def check_and_sync_video():
                 'client_time': list(client_data.values())[-1].get('client_time', 0),
             }
         )
+    else:
+        pass
 
 
 # Эта задача будет запускаться каждые 5 секунд, если последняя команда на сокете не stop.
