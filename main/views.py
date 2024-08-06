@@ -36,21 +36,46 @@ def parse_station(station):
     up = station.attrib.get('up')
     skip = station.attrib.get('skip')
     pos = station.attrib.get('pos')
-    transitions = []
+    cityexit = station.attrib.get('cityexit')
+    metro_transfer = station.attrib.get('metro_transfer')
+
     pname = name.split('|')
     name = pname[0]
     name2 = pname[1]
-    for transition in station.findall('transfer'):
-        transition_name = transition.attrib.get('name')
-        if transition_name != '|':
-            names = transition_name.split('|')
-            stantion = names[0]
-            stantion2 = names[1]
-            transitions.append({"stantion": stantion, "stantion2": stantion2, "lane": 0})
+
+    transfers = []
+
+    for transfer in station.findall('transfer'):
+        transfer_name = transfer.attrib.get('name')
+        crossplatform = transfer.attrib.get('crossplatform')
+        isshow = transfer.attrib.get('isshow')
+
+        iconparts = []
+
+        if transfer_name != "|":
+            for icon in transfer.findall('icon/iconpart'):
+                color = icon.attrib.get('color')
+                symbol = icon.attrib.get('symbol')
+                iconparts.append({'color': color, 'symbol': symbol})
+
+            transfers.append({
+                'transfer_name': transfer_name,
+                'crossplatform': crossplatform,
+                'isshow': isshow,
+                'iconparts': iconparts,
+            })
     return {
-        'name': name,
-        'name2': name2,
-        'transitions': transitions
+        'station': {
+            'name': name,
+            'name2': name2,
+            'side': side,
+            'up': up,
+            'skip': skip,
+            'pos': pos,
+            'cityexit': cityexit,
+            'metro_transfer': metro_transfer,
+            'transfers': transfers
+        }
     }
 
 # Функция комплектовки данных парсера в формат - список словарей,
@@ -59,14 +84,21 @@ def get_stops():
     stops = []
     l = 100
     start = 0
+    total_stops = len(root.findall('station'))
+
+    if total_stops > 1:
+        d = l / (total_stops - 1)
+    else:
+        d = 0
+
     for stop in root.findall('station'):
         stop_info = parse_station(stop)
         stops.append(stop_info)
-    n = len(stops)
-    d = l / (n - 1)
-    for stop_info in stops:
-        stop_info["position"] = format(start, '.3f')
+
+    for i, stop_info in enumerate(stops):
+        stop_info['station']["position"] = round(start, 3)
         start += d
+    # print(stops)
     return stops
 
 def parse_running_text(root):
@@ -120,11 +152,40 @@ def send_update_route_command(request):
     current_index = cache.get('current_index', 0)
     next_index = (current_index + 1) % len(stops)
 
-    current_stop = stops[current_index]
-    next_stop = stops[next_index]
+    current_stop = stops[current_index]['station']
+    next_stop = stops[next_index]['station']
 
     cache.set('current_stop_index', current_index)
     cache.set('current_index', next_index)
+
+    form_transfer = []
+
+    for transfer in current_stop['transfers']:
+        form_transfer.append({
+            'transfer_name': transfer['transfer_name'],
+            'crossplatform': transfer['crossplatform'],
+            'isshow': transfer['isshow'],
+            'iconparts': transfer['iconparts'],
+        })
+
+    current_stop_info = {
+        'name': current_stop['name'],
+        'name2': current_stop['name2'],
+        'side': current_stop['side'],
+        'up': current_stop['up'],
+        'skip': current_stop['skip'],
+        'pos': current_stop['pos'],
+        'cityexit': current_stop['cityexit'],
+        'metro_transfer': current_stop['metro_transfer'],
+        'transfers': form_transfer,
+        'position': current_stop['position'],
+    }
+
+    next_stop_info = {
+        'name': next_stop['name'],
+        'name2': next_stop['name2'],
+        'position': next_stop['position'],
+    }
 
     try:
         async_to_sync(channel_layer.group_send)(
@@ -132,8 +193,8 @@ def send_update_route_command(request):
             {
                 'type': 'send_command_to_client',
                 'command': 'update_route',
-                'current_stop': current_stop,
-                'next_stop': next_stop,
+                'current_stop': current_stop_info,
+                'next_stop': next_stop_info,
             }
         )
     except Exception as e:
@@ -187,8 +248,8 @@ def get_current_route_data(request):
     current_index = cache.get('current_stop_index', 0)
     next_index = (current_index + 1) % len(stops)
 
-    current_stop = stops[current_index]
-    next_stop = stops[next_index]
+    current_stop = stops[current_index]['station']
+    next_stop = stops[next_index]['station']
 
     return JsonResponse({'current_stop': current_stop, 'next_stop': next_stop})
 
@@ -197,7 +258,7 @@ def get_current_route_data(request):
 def get_screen_info(request):
     stops = get_stops()
     context = {
-        'stops': stops,
+        'stops': [stop['station'] for stop in stops],
         'final_stop': stops[-1],
         'temperature': temperature,
     }
@@ -266,3 +327,23 @@ def get_global_status():
 
 def set_global_status(status_data):
     cache.set(GLOBAL_STATUS_KEY, status_data, timeout=None)
+
+
+# {
+#     'stantion': {
+#         'name': name,
+#         'name2': name2,
+#         'side': side,
+#         'up': up,
+#         'skip': skip,
+#         'pos': pos,
+#         'cityexit': cityexit,
+#         'metro_transfer': metro_transfer,
+#         'transfer': {
+#             'transfer_name': transfer_name,
+#             'crossplatform': crossplatform,
+#             'isshow': isshow,
+#             'iconpart': [color, symbol]
+#         }
+#     }
+# }

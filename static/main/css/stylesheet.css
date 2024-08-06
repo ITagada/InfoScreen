@@ -5,6 +5,13 @@ html, body {
     display: flex;
 }
 
+@font-face {
+    font-family: 'MoscowSansdev';
+    src: url('/static/fonts/MoscowSansdev.ttf') format('ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+
 .main {
     display: flex;
     width: 100vw;

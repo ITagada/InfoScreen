@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     // Получение данных остановок из контейнера
     var stops = JSON.parse(document.getElementById('stops-data').textContent);
+    console.log('Stops data', stops);
 
     var headerChange = document.createElement('div');
     headerChange.className = 'col-1-1-1';
@@ -57,21 +58,24 @@ document.addEventListener('DOMContentLoaded', function(){
 
     // Создание необходимых контейнеров и наполнение их данными
     stops.forEach(function(stop, index) {
+
+        var stopData = stop.station;
+
         var stopElement = document.createElement('div');
         stopElement.className = 'stop';
-        stopElement.style.left = stop.position + '%';
+        stopElement.style.left = stopData.position + '%';
         stopElement.dataset.index = index;
-        stopElement.title = stop.name;
+        stopElement.title = stopData.name;
         routeElement.appendChild(stopElement);
 
         var labelWrapper = document.createElement('div');
         labelWrapper.className = 'label-wrapper';
-        labelWrapper.style.left = stop.position + '%';
+        labelWrapper.style.left = stopData.position + '%';
 
         var labelElement = document.createElement('div');
         labelElement.className = 'label';
-        labelElement.style.left = stop.position + '%';
-        labelElement.innerText = stop.name;
+        labelElement.style.left = stopData.position + '%';
+        labelElement.innerText = stopData.name;
         labelElement.dataset.index = index;
         labelWrapper.appendChild(labelElement);
         routeElement.appendChild(labelWrapper);
@@ -80,11 +84,11 @@ document.addEventListener('DOMContentLoaded', function(){
     var currentIndex = 0;
 
     // Основная логика иммитации передвижения
-    function updateRoute(currentStop) {
+    function updateRoute(currentStop, nextStop) {
         var stopElements = document.querySelectorAll('.stop');
         var labelWrappers = document.querySelectorAll('.label-wrapper');
 
-        currentIndex = stops.findIndex(stop => stop.name === currentStop.name);
+        currentIndex = stops.findIndex(stop => stop.station.name === currentStop.name);
 
         stopElements.forEach(function(stopElement, index) {
             stopElement.classList.remove('completed', 'highlight');
@@ -110,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
         // Проверка текущего положения указателя остановки
         if (currentIndex >= 0 && currentIndex < stops.length) {
-            completedSegment.style.width = stops[currentIndex].position + '%';
+            completedSegment.style.width = stops[currentIndex].station.position + '%';
         } else {
             completedSegment.style.width = '0%';
         }
@@ -122,14 +126,13 @@ document.addEventListener('DOMContentLoaded', function(){
         // Функция создания контейнера под передаваемые данные и передача в
         // него данных
         setTimeout(() => {
-            currentStopElement.innerText = stops[currentIndex].name.toUpperCase() + " / " + stops[currentIndex].name2.toUpperCase();
-            if (currentIndex === stops.length - 1) {
-                nextStopElement.innerText = 'Конечная остановка / Ending station';
+            currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name2.toUpperCase();
+            if (nextStop) {
+                nextStopElement.innerText = 'Следующая остановка / Next station: ' + nextStop.name + " / " + nextStop.name2;
             } else {
-                nextStopElement.innerText = 'Следующая остановка ' + stops[(currentIndex + 1) % stops.length].name +
-                    " / Next station is " + stops[(currentIndex + 1) % stops.length].name2;
+                nextStopElement.innerText = 'Конечная остановка / Ending station';
             }
-            displayTransitions(stops[currentIndex].transitions);
+            displayTransitions(currentStop.transfers);
 
             // Удаляем класс анимации после завершения анимации
             setTimeout(function () {
@@ -141,45 +144,51 @@ document.addEventListener('DOMContentLoaded', function(){
 
     // Функция создания контейнера под передаваемые данные и передача в него
     // данных
-    function displayTransitions(transitions) {
+    function displayTransitions(transfers) {
         transitionsContainer.innerHTML = '';
         setTimeout(() => {
-            if (transitions && transitions.length > 0) {
-                transitions.forEach(function (transition){
-                   var transitionElement = document.createElement('div');
-                   transitionElement.className = 'transition';
-                   transitionElement.classList.add('change-station-animation');
+            if (transfers && transfers.length > 0) {
+                transfers.forEach(function (transfer){
+                    var transferElement = document.createElement('div');
+                    transferElement.className = 'transition';
+                    // transferElement.classList.add('change-station-animation');
 
-                   var icoTransitionElement = document.createElement('div');
-                   icoTransitionElement.className = 'ico';
-                   icoTransitionElement.id = 'ico';
-                   icoTransitionElement.innerText = `${transition.lane} `;
-                   const text = icoTransitionElement.innerText.trim().toLowerCase();
-                   transitionElement.appendChild(icoTransitionElement);
+                    var icoTransitionElement = document.createElement('div');
+                    icoTransitionElement.className = 'ico';
+                    icoTransitionElement.id = 'ico';
 
-                   var transitionText = document.createElement('div');
-                   transitionText.className = 'transition-text';
-                   transitionText.innerText = `${transition.stantion} / ${transition.stantion2}`;
-                   transitionElement.appendChild(transitionText);
+                    // Формируем текст иконки из iconparts
+                    var iconText = '';
+                    transfer.iconparts.forEach(function(iconpart) {
+                        iconText += `${iconpart.symbol} `;
+                    });
+                    icoTransitionElement.innerText = iconText.trim();
 
-                   transitionsContainer.appendChild(transitionElement)
+                    transferElement.appendChild(icoTransitionElement);
 
-                   setTimeout(function (){
-                       transitionElement.classList.remove('change-station-animation');
-                   }, 500);
+                    var transferText = document.createElement('div');
+                    transferText.className = 'transfer-text';
+                    transferText.innerText = `${transfer.transfer_name}`;
+                    transferElement.appendChild(transferText);
+
+                    transitionsContainer.appendChild(transferElement);
+
+                    setTimeout(function (){
+                        transferElement.classList.remove('change-station-animation');
+                    }, 500);
                 });
             } else {
-                var noTransitionElement = document.createElement('div');
-                noTransitionElement.className = 'picture';
-                noTransitionElement.classList.add('change-station-animation')
-                noTransitionElement.innerText = 'THIS IS YOUR PICTURE';
-                transitionsContainer.appendChild(noTransitionElement);
+                var noTransferElement = document.createElement('div');
+                noTransferElement.className = 'no-transfer';
+                // noTransferElement.classList.add('change-station-animation');
+                noTransferElement.innerText = 'No transfers available';
+                transitionsContainer.appendChild(noTransferElement);
 
                 setTimeout(function (){
-                    noTransitionElement.classList.remove('change-station-animation');
+                    noTransferElement.classList.remove('change-station-animation');
                 }, 500);
             }
-        }, 10)
+        }, 10);
     }
 
     function createRunningTextContainer(text) {

@@ -1,71 +1,129 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/video_sync/');
+    let socket;
     let videoContainerCreated = false;
     let videoStarted = false;
     let videoElement;
     let syncInterval;
     let lastSyncTime = 0;
-    let lastReceivedTime = 0;
 
-    socket.onopen = function () {
-        console.log('VideoSocket is connected');
-    };
+    function createSocket() {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            console.log('Socket already open');
+            return; // Прекращаем создание нового соединения, если уже есть открытое
+        }
 
-    socket.onerror = function (error) {
-        console.error('VideoSocket error:', error);
-    };
+        socket = new WebSocket('ws://' + window.location.host + '/ws/video_sync/');
 
-    socket.onmessage = function (e) {
-        const data = JSON.parse(e.data);
-        const command = data.command;
-
-        // Отлавливаем пришедшую команду
-        if (command === "start") {
-            // Создаем контейнер для видеоплеера
-            if (!videoStarted) {
-                createVideoElement();
+        socket.onopen = function () {
+            console.log('VideoSocket is open');
+            if (!syncInterval) {
+                syncInterval = setInterval(syncVideo, 1000);
             }
+        }
 
-            // Запускаем видео и фиксируем время
-            const startTime = data.start_time;
-            const serverTime = data.server_time;
-            const clientTime = Date.now() / 1000;
-            const syncStartTime = startTime + (clientTime - serverTime);
-            videoElement.currentTime = syncStartTime;
-            videoElement.muted = true;
-            videoElement.play().then(() => {
-                //videoElement.muted = false;
-                videoStarted = true;
-            }).catch((error) => {
-                console.error('Autoplay error:', error);
-            });
-        // } else if (command === "max_time") {
-        //   console.log('Max time: ', data.max_time);
-        } else if (command === "sync" && videoStarted && !videoElement.paused) {
-            const currentTime = data.current_time;
-            const diff = Math.abs(videoElement.currentTime - currentTime);
-            if (diff > 0.5) {
-                videoElement.pause();
-                videoElement.currentTime = currentTime;
-                videoElement.play().then(() => {
-                    console.log('Video synced and started again');
-                }).catch((error) => {
-                    console.error('Resyncing error:', error);
-                });
-                lastReceivedTime = currentTime;
+        socket.onerror = function (error) {
+            console.error('VideoSocket error:', error);
+            clearInterval(syncInterval);
+            syncInterval = null;
+            setTimeout(createSocket, 10000);
+        };
+
+        socket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            const command = data.command;
+
+            console.log(`Received command: ${command}`); // Логи для отладки
+
+            if (command === "get_state") {
+                handleState(data);
+            } else if (command === "start") {
+                handleStart(data);
+            } else if (command === "sync" && videoStarted && !videoElement.paused) {
+                handleSync(data);
+            } else if (command === "stop" && videoStarted) {
+                handleStop();
             }
-        } else if (command === "stop" && videoStarted) {
-            console.log('Stop command received'); // Добавлен лог
-            removeVideoElement();
+        };
+
+        socket.onclose = function (event) {
+            console.log('VideoSocket closed', event);
+            clearInterval(syncInterval);
+            syncInterval = null;
+            setTimeout(createSocket, 10000); // Пауза перед повторным подключением
+        };
+    }
+
+    function syncVideo() {
+        if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
+            const currentTime = videoElement.currentTime;
+            const now = Date.now();
+
+            const syncData = {
+                'current_time': currentTime,
+                'client_time': now / 1000,
+            };
+            socket.send(JSON.stringify(syncData));
         }
     };
 
-    socket.onclose = function () {
-        console.log('VideoSocket closed');
-        clearInterval(syncInterval);
+    function handleState(data) {
+        console.log(`Handling state: ${data.status}`); // Логи для отладки
+
+        const status = data.status;
+
+        if (status === 'start') {
+            handleStart(data);
+        } else if (status === 'stop') {
+            handleStop();
+        } else if (status === 'sync') {
+            handleStart(data)
+        }
     }
 
-    // Функция создания контейнера для видеоплеера
+    function handleStart(data) {
+        if (!videoStarted) {
+            createVideoElement();
+        }
+
+        const startTime = data.start_time;
+        videoElement.currentTime = startTime;
+        videoElement.muted = true;
+        videoElement.play().then(() => {
+            videoStarted = true;
+        }).catch((error) => {
+            console.error('Autoplay error:', error);
+        });
+        lastSyncTime = startTime;
+    }
+
+    function handleSync(data) {
+        const now = Date.now() / 1000;
+        const serverTime = data.server_time;
+        const estimatedClientTime = data.current_time + (now - serverTime);
+
+        // console.log('Received current time:', currentTime, videoElement.currentTime);
+        const timeDifference = Math.abs(videoElement.currentTime - estimatedClientTime);
+
+        if (timeDifference > 0.1) {
+            videoElement.currentTime = estimatedClientTime;
+
+            videoElement.addEventListener('seeked', function onSeeked() {
+               videoElement.removeEventListener('seeked', onSeeked);
+               videoElement.play().then(() => {
+                   // console.log('Video element synced and started at: ', videoElement.currentTime);
+               }).catch((error) => {
+                   console.error('Resycing error: ', error);
+               });
+            });
+        }
+    }
+
+    function handleStop() {
+        removeVideoElement();
+    }
+
+    createSocket();
+
     function createVideoElement() {
         if (!videoContainerCreated) {
             const videoContainer = document.querySelector('.col-3-2');
@@ -81,31 +139,21 @@ document.addEventListener('DOMContentLoaded', function() {
             videoElement.src = '/media/video/sample-30s.mp4';
             videoElement.controls = true;
 
-            videoElement.addEventListener('ended', function () {
+            videoElement.onEnded = function() {
                 if (videoStarted) {
                     videoElement.currentTime = 0;
                     videoElement.addEventListener('seeked', function onSeeked() {
                         videoElement.removeEventListener('seeked', onSeeked);
                         videoElement.play();
+                        socket.send(JSON.stringify({
+                            command: 'reset_time',
+                        }));
                     });
                 }
-            });
+            };
 
-            // Отправка текущего времени при обновлении времени воспроизведения
-            videoElement.addEventListener('timeupdate', function () {
-                if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
-                    const currentTime = videoElement.currentTime;
-                    const now = Date.now();
-
-                    if (now - lastSyncTime > 1000) {
-                        lastSyncTime = now;
-                        socket.send(JSON.stringify({
-                            'command': 'sync',
-                            'current_time': currentTime
-                        }));
-                    }
-                }
-            });
+            videoElement.addEventListener('ended', videoElement.onEnded);
+            videoElement.addEventListener('timeupdate', videoElement.onTimeUpdate);
 
             videoContainer.appendChild(videoElement);
             videoContainerCreated = true;
@@ -115,32 +163,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Функция удаления контейнера
     function removeVideoElement() {
         if (videoContainerCreated) {
             videoElement.pause();
+            videoElement.removeEventListener('ended', videoElement.onEnded); // Убираем обработчик события
+            videoElement.removeEventListener('timeupdate', videoElement.onTimeUpdate); // Убираем обработчик события
             videoElement.remove();
             videoElement = null;
             videoContainerCreated = false;
             videoStarted = false;
         }
     }
-
-    // Установка интервала проверки синхронизации
-    syncInterval = setInterval(function () {
-        if (videoStarted && socket.readyState === WebSocket.OPEN) {
-            const currentTime = videoElement.currentTime;
-            const now = Date.now();
-
-            if (now - lastSyncTime > 1000) {
-                lastSyncTime = now;
-                socket.send(JSON.stringify({
-                    'command': 'sync',
-                    'current_time': currentTime
-                }));
-            }
-        }
-    }, 1000);
 
     window.addEventListener('beforeunload', function () {
         clearInterval(syncInterval);
