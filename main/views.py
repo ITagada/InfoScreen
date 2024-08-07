@@ -270,7 +270,7 @@ def get_screen_info2(request):
     stops = get_stops()
     context = {
         'stops': stops,
-        'final_stop': stops[-1],
+        'final_stop': stops[-1]['station'],
         'temperature': temperature,
     }
     return render(request, 'main/get_screen_info2.html', context)

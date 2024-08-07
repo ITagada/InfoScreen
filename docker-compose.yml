@@ -6,6 +6,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
+      - ./static:/app/static
       - /home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
       - /home/andrew_q/PycharmProjects/BIT/textset3_3.bit:/app/textset3_3.bit
     ports:

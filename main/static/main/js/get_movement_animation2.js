@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function(){
         // него данных
         setTimeout(() => {
             currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name2.toUpperCase();
-            if (nextStop) {
+            if (nextStop && stops[currentIndex + 1] && currentIndex < stops.length - 1) {
                 nextStopElement.innerText = 'Следующая остановка / Next station: ' + nextStop.name + " / " + nextStop.name2;
             } else {
                 nextStopElement.innerText = 'Конечная остановка / Ending station';

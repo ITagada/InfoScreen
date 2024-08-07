@@ -7,7 +7,7 @@ html, body {
 
 @font-face {
     font-family: 'MoscowSansdev';
-    src: url('/static/fonts/MoscowSansdev.ttf') format('ttf');
+    src: url('/static/main/fonts/MoscowSansdev.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
