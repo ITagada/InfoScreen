@@ -210,46 +210,51 @@ document.addEventListener('DOMContentLoaded', function(){
     function updateRoute(currentStop, nextStop) {
         var stopElements = document.querySelectorAll('.stop');
         var labelWrappers = document.querySelectorAll('.label-wrapper');
+        var completedSegment = document.getElementById('completed-segment');
 
         currentIndex = stops.findIndex(stop => stop.station.name === currentStop.name);
 
         stopElements.forEach(function(stopElement, index) {
-            stopElement.classList.remove('completed', 'highlight');
             if (index < currentIndex) {
-                stopElement.classList.add('completed');
+                if (!stopElement.classList.contains('completed')) {
+                    stopElement.classList.add('completed');
+                }
             } else if (index === currentIndex) {
                 stopElement.classList.add('highlight');
+                stopElement.classList.remove('completed');
+            } else {
+                stopElement.classList.remove('highlight');
             }
         });
 
-        // Функция обертки для анимации
         labelWrappers.forEach(function(labelWrapper, index) {
             var labelElement = labelWrapper.querySelector('.label');
-            labelElement.classList.remove('completed-label', 'highlight-label');
-            labelWrapper.classList.remove('highlight-label');
             if (index < currentIndex) {
-                labelElement.classList.add('completed-label');
+                if (!labelElement.classList.contains('completed-label')) {
+                    labelElement.classList.add('completed-label');
+                }
             } else if (index === currentIndex) {
                 labelElement.classList.add('highlight-label');
                 labelWrapper.classList.add('highlight-label');
+                labelElement.classList.remove('completed-label');
+            } else {
+                labelElement.classList.remove('highlight-label');
+                labelWrapper.classList.remove('highlight-label');
             }
         });
 
-        // Проверка текущего положения указателя остановки
         if (currentIndex >= 0 && currentIndex < stops.length) {
             completedSegment.style.width = stops[currentIndex].station.position + '%';
-        } else {
-            completedSegment.style.width = '0%';
         }
 
         // Добавляем класс анимации перед обновлением текста
         currentStopElement.classList.add('change-station-animation');
         nextStopElement.classList.add('change-station-animation');
 
-        // Функция создания контейнера под передаваемые данные и передача в
-        // него данных
         setTimeout(() => {
-            currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name2.toUpperCase();
+            if (currentStop.name) {
+                currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name2.toUpperCase();
+            }
             if (nextStop && stops[currentIndex + 1] && currentIndex < stops.length - 1) {
                 nextStopElement.innerText = 'Следующая остановка / Next station: ' + nextStop.name + " / " + nextStop.name2;
             } else {
@@ -382,6 +387,8 @@ document.addEventListener('DOMContentLoaded', function(){
             // Проверка команды и обновление маршрута
             if (data.command === "update_route") {
                 updateRoute(data.current_stop, data.next_stop);
+
+                console.log('Status: ', data.status);
             }
 
             //Команда создания контейнера бегущей строки
@@ -438,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     connectWebSocket()
 
-    if (stops.length > 0) {
-        updateRoute(stops[0], stops[1]);
-    }
+    // if (stops.length > 0) {
+    //     updateRoute(stops[0], stops[1]);
+    // }
 });

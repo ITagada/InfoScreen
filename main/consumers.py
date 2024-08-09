@@ -56,10 +56,12 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         if command == 'update_route':
             current_stop = event.get('current_stop')
             next_stop = event.get('next_stop')
+            current_status = event.get('status')
             await self.send(text_data=json.dumps({
                 'command': 'update_route',
                 'current_stop': current_stop,
                 'next_stop': next_stop,
+                'status': current_status
             }))
         elif command == 'create_running_text':
             text = event.get('text')

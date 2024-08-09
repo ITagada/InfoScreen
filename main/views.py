@@ -1,4 +1,3 @@
-
 import json
 import logging
 import time
@@ -9,6 +8,7 @@ from django.http import JsonResponse
 from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+
 from celery import shared_task
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,10 @@ global_sw = None
 global_sh = None
 
 GLOBAL_STATUS_KEY = 'global_status'
+
+global_ci = 0
+global_count = 0
+
 
 # Функция парсер данных xml, которые будут поступать от главного сервера
 def parse_station(station):
@@ -78,6 +82,7 @@ def parse_station(station):
         }
     }
 
+
 # Функция комплектовки данных парсера в формат - список словарей,
 # с добавлением данных о позиции на маршруте
 def get_stops():
@@ -101,6 +106,7 @@ def get_stops():
     # print(stops)
     return stops
 
+
 def parse_running_text(root):
     running_text = []
     for message in text_root.findall('message'):
@@ -117,6 +123,7 @@ def parse_running_text(root):
             'speed': speed
         })
     return running_text
+
 
 # Функция обработчик стартового экрана, которая принимает в себя данные о
 # подключенных устройствах и, исходя из этого перенаправляет на ту или иную
@@ -144,59 +151,67 @@ def index(request):
     else:
         return render(request, 'main/index.html')
 
+
 # Функция обработчик команды на обновление маршрута от головного сервера
 def send_update_route_command(request):
+    global global_ci, global_count
+
+    if 'global_ci' not in globals():
+        global_ci = 0
+    if 'global_count' not in globals():
+        global_count = 0
+
     stops = get_stops()
     channel_layer = get_channel_layer()
     statuses = ['door_close', 'door_open', 'departure', 'moving_1', 'moving_2']
 
-    current_index = cache.get('current_index', 0)
-    next_index = (current_index + 1) % len(stops)
-    update_count = cache.get('update_count', 0)
-    current_status = cache.get('current_status', statuses[0])
+    global_ci = (global_ci + 1) % len(statuses)
+    current_status = statuses[global_ci]
 
-    current_stop = stops[current_index]['station']
-    next_stop = stops[next_index]['station']
-
-    cache.set('current_stop_index', current_index)
-    cache.set('current_index', next_index)
-
-    if update_count == 4:
-        current_status = statuses[(statuses.index(current_status) + 1) % len(statuses)]
-        cache.set('update_count', 0)
-    else:
-        cache.set('update_count', update_count + 1)
-
-    form_transfer = []
-
-    for transfer in current_stop['transfers']:
-        form_transfer.append({
-            'transfer_name': transfer['transfer_name'],
-            'crossplatform': transfer['crossplatform'],
-            'isshow': transfer['isshow'],
-            'iconparts': transfer['iconparts'],
-        })
-
-    current_stop_info = {
-        'name': current_stop['name'],
-        'name2': current_stop['name2'],
-        'side': current_stop['side'],
-        'up': current_stop['up'],
-        'skip': current_stop['skip'],
-        'pos': current_stop['pos'],
-        'cityexit': current_stop['cityexit'],
-        'metro_transfer': current_stop['metro_transfer'],
-        'transfers': form_transfer,
-        'position': current_stop['position'],
-    }
-
-    next_stop_info = {
-        'name': next_stop['name'],
-        'name2': next_stop['name2'],
-        'position': next_stop['position'],
-    }
+    current_stop_info = {}
+    next_stop_info = {}
 
     try:
+        if global_count == 0:
+
+            current_index = cache.get('current_index', 0)
+            next_index = (current_index + 1) % len(stops)
+
+            cache.set('current_index', next_index)
+
+            current_stop = stops[current_index]['station']
+            next_stop = stops[next_index]['station']
+
+            form_transfer = []
+
+            for transfer in current_stop['transfers']:
+                form_transfer.append({
+                    'transfer_name': transfer['transfer_name'],
+                    'crossplatform': transfer['crossplatform'],
+                    'isshow': transfer['isshow'],
+                    'iconparts': transfer['iconparts'],
+                })
+
+            current_stop_info = {
+                'name': current_stop['name'],
+                'name2': current_stop['name2'],
+                'side': current_stop['side'],
+                'up': current_stop['up'],
+                'skip': current_stop['skip'],
+                'pos': current_stop['pos'],
+                'cityexit': current_stop['cityexit'],
+                'metro_transfer': current_stop['metro_transfer'],
+                'transfers': form_transfer,
+                'position': current_stop['position'],
+            }
+
+            next_stop_info = {
+                'name': next_stop['name'],
+                'name2': next_stop['name2'],
+                'position': next_stop['position'],
+            }
+
+
         async_to_sync(channel_layer.group_send)(
             'route_updates',
             {
@@ -207,9 +222,13 @@ def send_update_route_command(request):
                 'status': current_status,
             }
         )
+
+        global_count = (global_count + 1) % len(statuses)
+        print('Status: ', current_status)
     except Exception as e:
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
+
 
 class RunningTextIterator:
     def __init__(self, running_text):
@@ -230,8 +249,10 @@ class RunningTextIterator:
             self.index += 1
             return text_item
 
+
 running_text = parse_running_text(text_root)
 iterator = RunningTextIterator(running_text)
+
 
 def send_running_text_container_command(request):
     channel_layer = get_channel_layer()
@@ -251,6 +272,7 @@ def send_running_text_container_command(request):
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
 
+
 # Функция автоматического обновления данных у клиента при переподключении к
 # сокету после потери конекта
 def get_current_route_data(request):
@@ -263,6 +285,7 @@ def get_current_route_data(request):
 
     return JsonResponse({'current_stop': current_stop, 'next_stop': next_stop})
 
+
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных
 # данных от главного сервера
 def get_screen_info(request):
@@ -274,6 +297,7 @@ def get_screen_info(request):
     }
     return render(request, 'main/get_screen_info.html', context)
 
+
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных
 # данных от главного сервера
 def get_screen_info2(request):
@@ -284,6 +308,7 @@ def get_screen_info2(request):
         'temperature': temperature,
     }
     return render(request, 'main/get_screen_info2.html', context)
+
 
 def send_play_video_command(request):
     channel_layer = get_channel_layer()
@@ -307,6 +332,7 @@ def send_play_video_command(request):
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
 
+
 def send_stop_video_command(request):
     channel_layer = get_channel_layer()
 
@@ -328,6 +354,7 @@ def send_stop_video_command(request):
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
 
+
 def get_global_status():
     return cache.get(GLOBAL_STATUS_KEY, {
         'status': None,
@@ -335,9 +362,9 @@ def get_global_status():
         'server_time': None,
     })
 
+
 def set_global_status(status_data):
     cache.set(GLOBAL_STATUS_KEY, status_data, timeout=None)
-
 
 # {
 #     'stantion': {
