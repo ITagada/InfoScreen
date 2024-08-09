@@ -148,15 +148,24 @@ def index(request):
 def send_update_route_command(request):
     stops = get_stops()
     channel_layer = get_channel_layer()
+    statuses = ['door_close', 'door_open', 'departure', 'moving_1', 'moving_2']
 
     current_index = cache.get('current_index', 0)
     next_index = (current_index + 1) % len(stops)
+    update_count = cache.get('update_count', 0)
+    current_status = cache.get('current_status', statuses[0])
 
     current_stop = stops[current_index]['station']
     next_stop = stops[next_index]['station']
 
     cache.set('current_stop_index', current_index)
     cache.set('current_index', next_index)
+
+    if update_count == 4:
+        current_status = statuses[(statuses.index(current_status) + 1) % len(statuses)]
+        cache.set('update_count', 0)
+    else:
+        cache.set('update_count', update_count + 1)
 
     form_transfer = []
 
@@ -195,6 +204,7 @@ def send_update_route_command(request):
                 'command': 'update_route',
                 'current_stop': current_stop_info,
                 'next_stop': next_stop_info,
+                'status': current_status,
             }
         )
     except Exception as e:

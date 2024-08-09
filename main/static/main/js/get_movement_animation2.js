@@ -1,13 +1,42 @@
 document.addEventListener('DOMContentLoaded', function(){
-    // Создание контейнеров динамически
-    var container2 = document.getElementById('container-2');
-    var container1 = document.getElementById('container-1');
+    // Получение данных остановок из контейнера
+    var stops = JSON.parse(document.getElementById('stops-data').textContent)
+    console.log('Stops data', stops);
 
-    var col2_1 = document.createElement('div');
+    // Создание контейнеров динамически
+    var mainContainer = document.createElement('div');
+    mainContainer.className = 'main';
+    document.body.appendChild(mainContainer);
+
+    var container1 = document.createElement('div');
+    container1.className = 'container-1';
+    container1.id = 'container-1';
+    mainContainer.appendChild(container1);
+
+    var headerChange = document.createElement('div');
+    headerChange.className = 'col-1-1-1';
+    headerChange.id = 'col-1-1-1';
+    container1.appendChild(headerChange);
+
+    var headerText = document.createElement('h2');
+    headerText.innerText = 'Пересадки / Change here for';
+    headerChange.appendChild(headerText);
+
+     var transitionsContainer = document.createElement('div');
+    transitionsContainer.className = 'col-1-1';
+    transitionsContainer.id = 'col-1-1';
+    container1.appendChild(transitionsContainer);
+
+    var container2 = document.createElement('div');
+    container2.className = 'container-2';
+    container2.id = 'container-2';
+    mainContainer.appendChild(container2);
+
+     var col2_1 = document.createElement('div');
     col2_1.className = 'col-2-1';
     container2.appendChild(col2_1);
 
-    var currentStopElement = document.createElement('div');
+     var currentStopElement = document.createElement('div');
     currentStopElement.className = 'current-stop';
     currentStopElement.id = 'current-stop';
     currentStopElement.innerText = 'Current stop: ';
@@ -38,23 +67,117 @@ document.addEventListener('DOMContentLoaded', function(){
     completedSegment.id = 'completed-segment';
     routeElement.appendChild(completedSegment);
 
-    // Получение данных остановок из контейнера
-    var stops = JSON.parse(document.getElementById('stops-data').textContent);
-    console.log('Stops data', stops);
+    var container3 = document.createElement('div');
+    container3.className = 'container-3';
+    container3.id = 'container-3';
+    mainContainer.appendChild(container3);
 
-    var headerChange = document.createElement('div');
-    headerChange.className = 'col-1-1-1';
-    headerChange.id = 'col-1-1-1';
-    container1.appendChild(headerChange);
+    var col3_1 = document.createElement('div');
+    col3_1.className = 'col-3-1';
+    col3_1.id = 'col-3-1';
+    container3.appendChild(col3_1);
 
-    var headerText = document.createElement('h2');
-    headerText.innerText = 'Пересадки / Change here for';
-    headerChange.appendChild(headerText);
+    var col3_1_1 = document.createElement('div');
+    col3_1_1.className = 'col-3-1-1';
+    col3_1_1.id =  'col-3-1-1';
+    col3_1.appendChild(col3_1_1);
 
-    var transitionsContainer = document.createElement('div');
-    transitionsContainer.className = 'col-1-1';
-    transitionsContainer.id = 'col-1-1';
-    container1.appendChild(transitionsContainer);
+    var col3_1_1_1 = document.createElement('div');
+    col3_1_1_1.className = 'col-3-1-1-1';
+    col3_1_1_1.id =  'col-3-1-1-1';
+    col3_1_1_1.innerText = 'Поезд следует до остановки / Terminal station:';
+    col3_1_1.appendChild(col3_1_1_1);
+
+    var col3_1_1_2 = document.createElement('div');
+    col3_1_1_2.className = 'col-3-1-1-2';
+    col3_1_1_2.id = 'col-3-1-1-2';
+    if (stops && stops.length > 0) {
+        var lastStop = stops[stops.length - 1];
+        var lastStopName = lastStop.station.name;
+        var lastStopName2 = lastStop.station.name2;
+    }
+    col3_1_1_2.innerText = lastStopName + ' / ' + lastStopName2;
+    col3_1_1.appendChild(col3_1_1_2);
+
+    var col3_1_2 = document.createElement('div');
+    col3_1_2.className = 'col-3-1-2';
+    col3_1_2.id = 'col-3-1-2';
+    col3_1.appendChild(col3_1_2);
+
+    var time = document.createElement('div');
+    time.className = 'time';
+    time.id = 'time';
+    col3_1_2.appendChild(time);
+
+    var date = document.createElement('div');
+    date.className = 'date';
+    date.id = 'date';
+    col3_1_2.appendChild(date);
+
+    var col3_1_3 = document.createElement('div');
+    col3_1_3.className = 'col-3-1-3';
+    col3_1_3.id = 'col-3-1-3';
+    col3_1.appendChild(col3_1_3);
+
+    var temperature = document.createElement('div');
+    temperature.className = 'temperature';
+    temperature.id = 'temperature';
+    temperature.innerText = 'температура воздуха:';
+    col3_1_3.appendChild(temperature);
+
+    var inside = document.createElement('div');
+    inside.className = 'inside';
+    inside.id = 'inside';
+    col3_1_3.appendChild(inside);
+
+    var insidehead = document.createElement('div');
+    insidehead.className = 'insidehead';
+    insidehead.id = 'insidehead';
+    insidehead.innerText = 'в салоне / salon'
+    inside.appendChild(insidehead);
+
+    var insidebody = document.createElement('div');
+    insidebody.className = 'insidebody';
+    insidebody.id = 'insidebody';
+    inside.appendChild(insidebody);
+
+    var outside = document.createElement('div');
+    outside.className = 'outside';
+    outside.id = 'outside';
+    col3_1_3.appendChild(outside);
+
+    var outsidehead = document.createElement('div');
+    outsidehead.className = 'outsidehead';
+    outsidehead.id = 'outsidehead';
+    outsidehead.innerText = 'на улице / outdoor'
+    outside.appendChild(outsidehead);
+
+    var outsidebody = document.createElement('div');
+    outsidebody.className = 'outsidebody';
+    outsidebody.id = 'outsidebody';
+    outside.appendChild(outsidebody);
+
+    var col3_2 = document.createElement('div');
+    col3_2.className = 'col-3-2';
+    col3_2.id = 'col-3-2';
+    container3.appendChild(col3_2);
+
+    function updateTime() {
+        var nowDateTime = new Date();
+        var dateOptions = {
+             weekday: "short", year: "numeric", month: "long", day: "numeric"
+        }   ;
+        var timeOptions = {
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        };
+        var formattedDate = nowDateTime.toLocaleDateString('ru-RU', dateOptions);
+        var formattedTime = nowDateTime.toLocaleTimeString('ru-RU', timeOptions);
+        document.getElementById('time').innerText = formattedTime;
+        document.getElementById('date').innerText = formattedDate;
+    }
+    setInterval(updateTime, 1000);
+
+    updateTime();
 
     // Создание необходимых контейнеров и наполнение их данными
     stops.forEach(function(stop, index) {
