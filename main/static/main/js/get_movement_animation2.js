@@ -207,12 +207,23 @@ document.addEventListener('DOMContentLoaded', function(){
     var currentIndex = 0;
 
     // Основная логика иммитации передвижения
-    function updateRoute(currentStop, nextStop) {
+    function updateRoute(currentStop, nextStop, status) {
         var stopElements = document.querySelectorAll('.stop');
         var labelWrappers = document.querySelectorAll('.label-wrapper');
         var completedSegment = document.getElementById('completed-segment');
 
         currentIndex = stops.findIndex(stop => stop.station.name === currentStop.name);
+
+        if (currentIndex === 0 && status === 'door_open') {
+            stopElements.forEach(function(stopElement) {
+                stopElement.classList.remove('completed');
+            });
+
+            labelWrappers.forEach(function(labelWrapper) {
+                var labelElement = labelWrapper.querySelector('.label');
+                labelElement.classList.remove('completed-label');
+            });
+        }
 
         stopElements.forEach(function(stopElement, index) {
             if (index < currentIndex) {
@@ -227,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
 
-        labelWrappers.forEach(function(labelWrapper, index) {
+         labelWrappers.forEach(function(labelWrapper, index) {
             var labelElement = labelWrapper.querySelector('.label');
             if (index < currentIndex) {
                 if (!labelElement.classList.contains('completed-label')) {
@@ -268,6 +279,48 @@ document.addEventListener('DOMContentLoaded', function(){
                 nextStopElement.classList.remove('change-station-animation');
             }, 500);
         }, 10);
+    }
+
+    function sendPlayVideoCommand() {
+        fetch('/send_play_video_command/')
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(err => console.error('Error sending play video command:', err));
+    }
+
+    function sendStopVideoCommand() {
+        fetch('/send_stop_video_command/')
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(err => console.error('Error sending stop video command:', err));
+    }
+
+    function updateExitIndicator(doorStatus) {
+        var col3_2 = document.querySelector('.col-3-2');
+        var exitIndicator = document.getElementById('exit-indicator');
+
+        if (!exitIndicator && doorStatus === 'door_open') {
+            exitIndicator = document.createElement('div');
+            exitIndicator.id = 'exit-indicator';
+            exitIndicator.classList.add('exit-indicator');
+            col3_2.appendChild(exitIndicator);
+
+            var arrow = document.createElement('div');
+            arrow.className = 'arrow';
+            arrow.id = 'arrow';
+            exitIndicator.appendChild(arrow);
+
+            var person = document.createElement('div');
+            person.className = 'person';
+            person.id = 'person';
+            exitIndicator.appendChild(person);
+
+            exitIndicator.style.display = 'block';
+        }
+
+        if (exitIndicator && doorStatus !== 'door_open') {
+            exitIndicator.remove();
+        }
     }
 
     // Функция создания контейнера под передаваемые данные и передача в него
@@ -386,9 +439,22 @@ document.addEventListener('DOMContentLoaded', function(){
 
             // Проверка команды и обновление маршрута
             if (data.command === "update_route") {
-                updateRoute(data.current_stop, data.next_stop);
+                updateRoute(data.current_stop, data.next_stop, data.status);
 
                 console.log('Status: ', data.status);
+
+                if (data.status === 'moving_2') {
+                    sendPlayVideoCommand();
+                }
+
+                if (data.status === 'door_close') {
+                    sendStopVideoCommand();
+                    updateExitIndicator(status);
+                }
+
+                if (data.status === 'door_open') {
+                    updateExitIndicator(status);
+                }
             }
 
             //Команда создания контейнера бегущей строки
