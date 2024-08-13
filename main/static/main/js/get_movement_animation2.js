@@ -299,11 +299,17 @@ document.addEventListener('DOMContentLoaded', function(){
         var col3_2 = document.querySelector('.col-3-2');
         var exitIndicator = document.getElementById('exit-indicator');
 
-        if (!exitIndicator && doorStatus === 'door_open') {
+        if (!exitIndicator) {
             exitIndicator = document.createElement('div');
             exitIndicator.id = 'exit-indicator';
             exitIndicator.classList.add('exit-indicator');
             col3_2.appendChild(exitIndicator);
+
+            var exitText = document.createElement('div');
+            exitText.className = 'exit-text';
+            exitText.id = 'exit-text';
+            exitText.innerText = 'ВЫХОД / EXIT';
+            exitIndicator.appendChild(exitText);
 
             var arrow = document.createElement('div');
             arrow.className = 'arrow';
@@ -314,14 +320,25 @@ document.addEventListener('DOMContentLoaded', function(){
             person.className = 'person';
             person.id = 'person';
             exitIndicator.appendChild(person);
-
-            exitIndicator.style.display = 'block';
         }
 
-        if (exitIndicator && doorStatus !== 'door_open') {
-            exitIndicator.remove();
+        if (doorStatus === 'door_open') {
+            exitIndicator.style.display = 'flex';
+            setTimeout(function () {
+                exitIndicator.classList.add('show');
+                exitIndicator.classList.remove('hide');
+            }, 200);
+        } else {
+            exitIndicator.classList.add('hide');
+            exitIndicator.classList.remove('show');
+            setTimeout(function () {
+                if (exitIndicator.classList.contains('hide')) {
+                    exitIndicator.remove();
+                }
+            }, 500);
         }
     }
+
 
     // Функция создания контейнера под передаваемые данные и передача в него
     // данных
@@ -449,11 +466,15 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 if (data.status === 'door_close') {
                     sendStopVideoCommand();
-                    updateExitIndicator(status);
+                    updateExitIndicator(data.status);
                 }
 
                 if (data.status === 'door_open') {
-                    updateExitIndicator(status);
+                    updateExitIndicator(data.status);
+                }
+
+                if (data.status === 'departure') {
+                    updateExitIndicator(data.status);
                 }
             }
 

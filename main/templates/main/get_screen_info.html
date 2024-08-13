@@ -11,47 +11,10 @@
     <link rel="stylesheet" type="text/css" href="{% static 'main/css/stylesheet.css' %}">
 </head>
 <body>
-    <div class="main">
-        <div class="container-1" id="container-1">        </div>
-        <div class="container-2" id="container-2">
-            <div class="stops-data" id="stops-data">
-                {{ stops|json_script:"stops-data" }}    
-            </div>
-        </div>
-        <div class="container-3">
-            <div class="col-3-1">
-                <div class="col-3-1-1">
-                    <div class="col-3-1-1-1">Поезд следует до остановки / 
-                        Terminal station: 
-                    </div>
-                    <div class="col-3-1-1-2">
-                        {{ final_stop.name }} / {{ final_stop.name2 }}
-                    </div>
-                </div>
-                <div class="col-3-1-2">
-                   <div class="time" id="time"></div>
-                   <div class="date" id="date"></div>
-                </div>
-                <div class="col-3-1-3">
-                    <div class="temperature">
-                        температура воздуха: 
-                    </div>
-                    <div class="inside">
-                        <div class="insidehead">в салоне / salon</div>
-                        <div class="insidebody">{{ temperature.inside }}&deg;</div>
-                    </div>
-                    <div class="outside">
-                        <div class="outsidehead">на улице / outdoor</div>
-                        <div class="outsidebody">
-                            {{ temperature.outside }}&deg;</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-3-2"></div>
-        </div>
-    </div>
+    <div class="stops-data" id="stops-data">
+        {{ stops|json_script:"stops-data" }}
+    </div>    
     <script src="{% static 'main/js/get_movement_animation.js' %}"></script>
-    <script src="{% static 'main/js/get_date_time.js' %}"></script>
     <script src="{% static 'main/js/sync_video.js' %}"></script>
 </body>
 </html>

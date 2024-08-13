@@ -9,7 +9,6 @@ from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-from celery import shared_task
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -291,8 +290,8 @@ def get_current_route_data(request):
 def get_screen_info(request):
     stops = get_stops()
     context = {
-        'stops': [stop['station'] for stop in stops],
-        'final_stop': stops[-1],
+        'stops': stops,
+        'final_stop': stops[-1]['station'],
         'temperature': temperature,
     }
     return render(request, 'main/get_screen_info.html', context)

@@ -1,12 +1,13 @@
 import logging
 from pathlib import Path
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-SECRET_KEY = 'django-insecure-vbp@#i_y%^shl6@inn^1%ujdrftw^4xa34fgvv0@7#y9*d@+a_'
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 DEBUG = True
 
