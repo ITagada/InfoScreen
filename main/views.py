@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.core.cache import cache
-from channels.layers import get_channel_layer
+from channels.layers import get_channel_layer, channel_layers
 from asgiref.sync import async_to_sync
 
 
@@ -151,65 +151,74 @@ def index(request):
         return render(request, 'main/index.html')
 
 
-# Функция обработчик команды на обновление маршрута от головного сервера
-def send_update_route_command(request):
+def update_status():
     global global_ci, global_count
 
-    if 'global_ci' not in globals():
-        global_ci = 0
-    if 'global_count' not in globals():
-        global_count = 0
-
-    stops = get_stops()
-    channel_layer = get_channel_layer()
     statuses = ['door_close', 'door_open', 'departure', 'moving_1', 'moving_2']
 
     global_ci = (global_ci + 1) % len(statuses)
     current_status = statuses[global_ci]
 
-    current_stop_info = {}
-    next_stop_info = {}
+    return current_status
+
+
+def update_route_info():
+    stops = get_stops()
+    current_index = cache.get('current_index', 0)
+    next_index = (current_index + 1) % len(stops)
+
+    cache.set('current_index', next_index)
+
+    current_stop = stops[current_index]['station']
+    next_stop = stops[next_index]['station']
+
+    form_transfer = []
+
+    for transfer in current_stop['transfers']:
+        form_transfer.append({
+            'transfer_name': transfer['transfer_name'],
+            'crossplatform': transfer['crossplatform'],
+            'isshow': transfer['isshow'],
+            'iconparts': transfer['iconparts'],
+        })
+
+    current_stop_info = {
+        'name': current_stop['name'],
+        'name2': current_stop['name2'],
+        'side': current_stop['side'],
+        'up': current_stop['up'],
+        'skip': current_stop['skip'],
+        'pos': current_stop['pos'],
+        'cityexit': current_stop['cityexit'],
+        'metro_transfer': current_stop['metro_transfer'],
+        'transfers': form_transfer,
+        'position': current_stop['position'],
+    }
+
+    next_stop_info = {
+        'name': next_stop['name'],
+        'name2': next_stop['name2'],
+        'position': next_stop['position'],
+    }
+
+    cache.set('current_stop_info', current_stop_info)
+    cache.set('next_stop_info', next_stop_info)
+
+    return current_stop_info, next_stop_info
+
+
+# Функция обработчик команды на обновление маршрута от головного сервера
+def send_update_route_command(request):
+    channel_layer = get_channel_layer()
 
     try:
-        if global_count == 0:
+        current_status = update_status()
 
-            current_index = cache.get('current_index', 0)
-            next_index = (current_index + 1) % len(stops)
-
-            cache.set('current_index', next_index)
-
-            current_stop = stops[current_index]['station']
-            next_stop = stops[next_index]['station']
-
-            form_transfer = []
-
-            for transfer in current_stop['transfers']:
-                form_transfer.append({
-                    'transfer_name': transfer['transfer_name'],
-                    'crossplatform': transfer['crossplatform'],
-                    'isshow': transfer['isshow'],
-                    'iconparts': transfer['iconparts'],
-                })
-
-            current_stop_info = {
-                'name': current_stop['name'],
-                'name2': current_stop['name2'],
-                'side': current_stop['side'],
-                'up': current_stop['up'],
-                'skip': current_stop['skip'],
-                'pos': current_stop['pos'],
-                'cityexit': current_stop['cityexit'],
-                'metro_transfer': current_stop['metro_transfer'],
-                'transfers': form_transfer,
-                'position': current_stop['position'],
-            }
-
-            next_stop_info = {
-                'name': next_stop['name'],
-                'name2': next_stop['name2'],
-                'position': next_stop['position'],
-            }
-
+        if current_status == 'door_open':
+            current_stop_info, next_stop_info = update_route_info()
+        else:
+            current_stop_info = cache.get('current_stop_info', {})
+            next_stop_info = cache.get('next_stop_info', {})
 
         async_to_sync(channel_layer.group_send)(
             'route_updates',
@@ -221,8 +230,6 @@ def send_update_route_command(request):
                 'status': current_status,
             }
         )
-
-        global_count = (global_count + 1) % len(statuses)
         print('Status: ', current_status)
     except Exception as e:
         return JsonResponse({'status': 'fail', 'message': str(e)})
@@ -275,14 +282,16 @@ def send_running_text_container_command(request):
 # Функция автоматического обновления данных у клиента при переподключении к
 # сокету после потери конекта
 def get_current_route_data(request):
-    stops = get_stops()
-    current_index = cache.get('current_stop_index', 0)
-    next_index = (current_index + 1) % len(stops)
+    # Обновляем статус и информацию о маршруте
+    current_status = update_status()
+    current_stop_info, next_stop_info = update_route_info()
 
-    current_stop = stops[current_index]['station']
-    next_stop = stops[next_index]['station']
-
-    return JsonResponse({'current_stop': current_stop, 'next_stop': next_stop})
+    # Возвращаем данные в формате JSON
+    return JsonResponse({
+        'current_stop': current_stop_info,
+        'next_stop': next_stop_info,
+        'status': current_status
+    })
 
 
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных

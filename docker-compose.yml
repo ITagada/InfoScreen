@@ -12,8 +12,8 @@ services:
     volumes:
       - .:/app
       - ./static:/app/static
-      - /home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
-      - /home/andrew_q/PycharmProjects/BIT/textset3_3.bit:/app/textset3_3.bit
+      - /home/andrew_q/PycharmProjects/Test/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
+      - /home/andrew_q/PycharmProjects/Test/BIT/textset3_3.bit:/app/textset3_3.bit
     ports:
       - "8000:8000"
     depends_on:
@@ -26,8 +26,8 @@ services:
     command: celery -A infoscreen worker --loglevel=info
     volumes:
       - .:/app
-      - /home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
-      - /home/andrew_q/PycharmProjects/BIT/textset3_3.bit:/app/textset3_3.bit
+      - /home/andrew_q/PycharmProjects/Test/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
+      - /home/andrew_q/PycharmProjects/Test/BIT/textset3_3.bit:/app/textset3_3.bit
     depends_on:
       - redis
 
@@ -36,8 +36,8 @@ services:
     command: celery -A infoscreen beat --loglevel=info
     volumes:
       - .:/app
-      - /home/andrew_q/PycharmProjects/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
-      - /home/andrew_q/PycharmProjects/BIT/textset3_3.bit:/app/textset3_3.bit
+      - /home/andrew_q/PycharmProjects/Test/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
+      - /home/andrew_q/PycharmProjects/Test/BIT/textset3_3.bit:/app/textset3_3.bit
     depends_on:
       - redis
 

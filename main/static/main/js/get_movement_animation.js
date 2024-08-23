@@ -214,16 +214,15 @@ document.addEventListener('DOMContentLoaded', function(){
 
         currentIndex = stops.findIndex(stop => stop.station.name === currentStop.name);
 
-        if (currentIndex === 0 && status === 'door_open') {
-            stopElements.forEach(function(stopElement) {
-                stopElement.classList.remove('completed');
-            });
+        // Удаление всех старых состояний
+        stopElements.forEach(function(stopElement) {
+            stopElement.classList.remove('highlight', 'completed');
+        });
 
-            labelWrappers.forEach(function(labelWrapper) {
-                var labelElement = labelWrapper.querySelector('.label');
-                labelElement.classList.remove('completed-label');
-            });
-        }
+        labelWrappers.forEach(function(labelWrapper) {
+            var labelElement = labelWrapper.querySelector('.label');
+            labelElement.classList.remove('highlight-label', 'completed-label');
+        });
 
         stopElements.forEach(function(stopElement, index) {
             if (index < currentIndex) {
@@ -278,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 currentStopElement.classList.remove('change-station-animation');
                 nextStopElement.classList.remove('change-station-animation');
             }, 500);
-        }, 10);
+        }, 100);
     }
 
     function sendPlayVideoCommand() {
@@ -322,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function(){
             exitIndicator.appendChild(person);
         }
 
-        if (doorStatus === 'door_open') {
+        if (doorStatus === 'door_open' || doorStatus === 'door_close') {
             exitIndicator.style.display = 'flex';
             setTimeout(function () {
                 exitIndicator.classList.add('show');
@@ -456,9 +455,11 @@ document.addEventListener('DOMContentLoaded', function(){
 
             // Проверка команды и обновление маршрута
             if (data.command === "update_route") {
-                updateRoute(data.current_stop, data.next_stop, data.status);
-
                 console.log('Status: ', data.status);
+
+                if (data.status === 'moving_1') {
+                    sendStopVideoCommand();
+                }
 
                 if (data.status === 'moving_2') {
                     sendPlayVideoCommand();
@@ -470,10 +471,15 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
 
                 if (data.status === 'door_open') {
+                    sendStopVideoCommand();
+                    if (data.current_stop && data.next_stop) {
+                        updateRoute(data.current_stop, data.next_stop, data.status);
+                    }
                     updateExitIndicator(data.status);
                 }
 
                 if (data.status === 'departure') {
+                    sendStopVideoCommand();
                     updateExitIndicator(data.status);
                 }
             }
@@ -488,11 +494,19 @@ document.addEventListener('DOMContentLoaded', function(){
             console.log('WebSocket connection opened');
             startPing();
             fetch('/get-current-route-data/')
-                .then(response => response.json())
-                .then(data => {
-                    updateRoute(data.current_stop, data.next_stop)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
                 })
-                .catch(error => console.error('Fetching data: ', error));
+                .then(data => {
+                    console.log('Data received:', data);
+                    updateRoute(data.current_stop, data.next_stop, data.status);
+                })
+                .catch(error => {
+                    console.error('Fetching data failed: ', error);
+                });
         };
 
         mainSocket.onerror = function (e) {

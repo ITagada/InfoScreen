@@ -56,7 +56,7 @@
 
 .completed-label {
     color: gray;
-    transform: rotate(60deg);
+    transform: rotate(30deg);
     transition: color 0.3s, transform 0.3s;
 }
 
