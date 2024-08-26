@@ -44,21 +44,21 @@ def parse_station(station):
 
     pname = name.split('|')
     name = pname[0]
-    name2 = pname[1]
+    name2 = pname[1] if len(pname) > 1 else ""
 
     transfers = []
 
     for transfer in station.findall('transfer'):
-        transfer_name = transfer.attrib.get('name')
-        crossplatform = transfer.attrib.get('crossplatform')
-        isshow = transfer.attrib.get('isshow')
+        transfer_name = transfer.attrib.get('name', '')
+        crossplatform = transfer.attrib.get('crossplatform', '')
+        isshow = transfer.attrib.get('isshow', '')
 
         iconparts = []
 
         if transfer_name != "|":
             for icon in transfer.findall('icon/iconpart'):
-                color = icon.attrib.get('color')
-                symbol = icon.attrib.get('symbol')
+                color = icon.attrib.get('color', '')
+                symbol = icon.attrib.get('symbol', '')
                 iconparts.append({'color': color, 'symbol': symbol})
 
             transfers.append({
@@ -161,6 +161,44 @@ def update_status():
 
     return current_status
 
+def get_current_route_info():
+    stops = get_stops()
+    current_index = cache.get('current_index', 0)
+    next_index = (current_index + 1) % len(stops)
+
+    current_stop = stops[current_index]['station']
+    next_stop = stops[next_index]['station']
+
+    form_transfer = []
+
+    for transfer in current_stop.get('transfers', []):
+        form_transfer.append({
+            'transfer_name': transfer.get('transfer_name', ''),
+            'crossplatform': transfer.get('crossplatform', ''),
+            'isshow': transfer.get('isshow', ''),
+            'iconparts': transfer.get('iconparts', []),
+        })
+
+    current_stop_info = {
+        'name': current_stop.get('name', ''),
+        'name2': current_stop.get('name2', ''),
+        'side': current_stop.get('side', ''),
+        'up': current_stop.get('up', ''),
+        'skip': current_stop.get('skip', ''),
+        'pos': current_stop.get('pos', ''),
+        'cityexit': current_stop.get('cityexit', ''),
+        'metro_transfer': current_stop.get('metro_transfer', ''),
+        'transfers': form_transfer,
+        'position': current_stop.get('position', ''),
+    }
+
+    next_stop_info = {
+        'name': next_stop.get('name', ''),
+        'name2': next_stop.get('name2', ''),
+        'position': next_stop.get('position', ''),
+    }
+
+    return current_stop_info, next_stop_info
 
 def update_route_info():
     stops = get_stops()
@@ -169,38 +207,9 @@ def update_route_info():
 
     cache.set('current_index', next_index)
 
-    current_stop = stops[current_index]['station']
-    next_stop = stops[next_index]['station']
+    current_stop_info, next_stop_info = get_current_route_info()
 
-    form_transfer = []
-
-    for transfer in current_stop['transfers']:
-        form_transfer.append({
-            'transfer_name': transfer['transfer_name'],
-            'crossplatform': transfer['crossplatform'],
-            'isshow': transfer['isshow'],
-            'iconparts': transfer['iconparts'],
-        })
-
-    current_stop_info = {
-        'name': current_stop['name'],
-        'name2': current_stop['name2'],
-        'side': current_stop['side'],
-        'up': current_stop['up'],
-        'skip': current_stop['skip'],
-        'pos': current_stop['pos'],
-        'cityexit': current_stop['cityexit'],
-        'metro_transfer': current_stop['metro_transfer'],
-        'transfers': form_transfer,
-        'position': current_stop['position'],
-    }
-
-    next_stop_info = {
-        'name': next_stop['name'],
-        'name2': next_stop['name2'],
-        'position': next_stop['position'],
-    }
-
+    # Сохраняем информацию для текущей и следующей остановок
     cache.set('current_stop_info', current_stop_info)
     cache.set('next_stop_info', next_stop_info)
 
@@ -219,6 +228,9 @@ def send_update_route_command(request):
         else:
             current_stop_info = cache.get('current_stop_info', {})
             next_stop_info = cache.get('next_stop_info', {})
+
+            if not current_stop_info or not next_stop_info:
+                current_stop_info, next_stop_info = get_current_route_info()
 
         async_to_sync(channel_layer.group_send)(
             'route_updates',
@@ -282,16 +294,25 @@ def send_running_text_container_command(request):
 # Функция автоматического обновления данных у клиента при переподключении к
 # сокету после потери конекта
 def get_current_route_data(request):
-    # Обновляем статус и информацию о маршруте
-    current_status = update_status()
-    current_stop_info, next_stop_info = update_route_info()
+    try:
+        # Получаем текущий статус и информацию о маршруте без обновления индекса
+        current_status = update_status()
+        current_stop_info, next_stop_info = get_current_route_info()
 
-    # Возвращаем данные в формате JSON
-    return JsonResponse({
-        'current_stop': current_stop_info,
-        'next_stop': next_stop_info,
-        'status': current_status
-    })
+        print(f'Current status: {current_status}')
+        print(f'Current stop info: {current_stop_info}')
+        print(f'Next stop info: {next_stop_info}')
+
+        # Возвращаем данные в формате JSON
+        return JsonResponse({
+            'current_stop': current_stop_info,
+            'next_stop': next_stop_info,
+            'status': current_status
+        })
+
+    except Exception as e:
+        print(f'Error on server: {e}')
+        return JsonResponse({'status': 'fail', 'message': str(e)}, status=500)
 
 
 # Функция обработчик страницы, передает в неё контекст в виде распаршенных

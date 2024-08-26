@@ -283,14 +283,12 @@ document.addEventListener('DOMContentLoaded', function(){
     function sendPlayVideoCommand() {
         fetch('/send_play_video_command/')
             .then(response => response.text())
-            .then(data => console.log(data))
             .catch(err => console.error('Error sending play video command:', err));
     }
 
     function sendStopVideoCommand() {
         fetch('/send_stop_video_command/')
             .then(response => response.text())
-            .then(data => console.log(data))
             .catch(err => console.error('Error sending stop video command:', err));
     }
 
@@ -441,6 +439,27 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     }
 
+    function applyInitialData(current_stop, next_stop, status) {
+        document.getElementById('current-stop').innerText = current_stop;
+        document.getElementById('next-stop').innerText = next_stop;
+
+        if (status === 'moving_1') {
+            sendStopVideoCommand();
+        }
+
+        if (status === 'moving_2') {
+            sendPlayVideoCommand();
+        }
+
+        if (status === 'door_close' || status === 'door_open' || status === 'departure') {
+            sendStopVideoCommand();
+            updateExitIndicator(status);
+        }
+
+        updateRoute(current_stop, next_stop, status);
+
+    }
+
     let url = `ws://${window.location.host}/ws/socket-server/`;
     let mainSocket;
     let pingInterval;
@@ -493,6 +512,7 @@ document.addEventListener('DOMContentLoaded', function(){
         mainSocket.onopen = function (e) {
             console.log('WebSocket connection opened');
             startPing();
+
             fetch('/get-current-route-data/')
                 .then(response => {
                     if (!response.ok) {
@@ -501,30 +521,7 @@ document.addEventListener('DOMContentLoaded', function(){
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Data received:', data);
-                    updateRoute(data.current_stop, data.next_stop, data.status);
-                    if (data.status === 'moving_1') {
-                        sendStopVideoCommand();
-                    }
-
-                    if (data.status === 'moving_2') {
-                        sendPlayVideoCommand();
-                    }
-
-                    if (data.status === 'door_close') {
-                        sendStopVideoCommand();
-                        updateExitIndicator(data.status);
-                    }
-
-                    if (data.status === 'door_open') {
-                        sendStopVideoCommand();
-                        updateExitIndicator(data.status);
-                    }
-
-                    if (data.status === 'departure') {
-                        sendStopVideoCommand();
-                        updateExitIndicator(data.status);
-                    }
+                    applyInitialData(data.current_stop, data.next_stop, data.status);
                 })
                 .catch(error => {
                     console.error('Fetching data failed: ', error);

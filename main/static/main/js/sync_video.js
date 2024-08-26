@@ -32,8 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = JSON.parse(e.data);
             const command = data.command;
 
-            console.log(`Received command: ${command}`); // Логи для отладки
-
             if (command === "get_state") {
                 handleState(data);
             } else if (command === "start") {
@@ -67,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function handleState(data) {
-        console.log(`Handling state: ${data.status}`); // Логи для отладки
 
         const status = data.status;
 
