@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<line name="Некрасовская|Nekrasovskaya" isround="false">
+  <icon>
+    <iconpart color="#F466BA" symbol="" />
+  </icon>
+  <station name="Некрасовка|Nekrasovka" side="left" up="0" skip="0" pos="0" cityexit="unselect" metro-transfer="0">
+    <transfer name="|" crossPlatform="0" isShow="0">
+      <icon>
+        <iconpart color="#2C75C4" symbol="➥" />
+      </icon>
+    </transfer>
+    <arrival>
+      <msg>
+        <text color="#000200">Станция Некрасовка</text>
+      </msg>
+      <msg>
+        <text color="#000200">Nekrasovka station</text>
+      </msg>
+    </arrival>
+    <departure>
+      <msg>
+        <text color="#000200">Следующая станция Лухмановская</text>
+      </msg>
+      <msg>
+        <text color="#000200">Next station is Lukhmanovskaya</text>
+      </msg>
+    </departure>
+  </station>
+  <station name="Лухмановская|Lukhmanovskaya" side="left" up="0" skip="0" pos="0" cityexit="unselect" metro-transfer="0">
+    <transfer name="|" crossPlatform="0" isShow="0">
+      <icon>
+        <iconpart color="#2C75C4" symbol="➥" />
+      </icon>
+    </transfer>
+    <arrival>
+      <msg>
+        <text color="#000200">Станция Лухмановская</text>
+      </msg>
+      <msg>
+        <text color="#000200">Lukhmanovskaya station</text>
+      </msg>
+    </arrival>
+    <departure>
+      <msg>
+        <text color="#000200">Следующая станция Улица Дмитриевского</text>
+      </msg>
+      <msg>
+        <text color="#000200">Next station is Ulitsa Dmitrievskogo</text>
+      </msg>
+    </departure>
+  </station>
+  <station name="Улица Дмитриевского|Ulitsa Dmitrievskogo" side="left" up="0" skip="0" pos="0" cityexit="unselect" metro-transfer="0">
+    <transfer name="|" crossPlatform="0" isShow="0">
+      <icon>
+        <iconpart color="#2C75C4" symbol="➥" />
+      </icon>
+    </transfer>
+    <arrival>
+      <msg>
+        <text color="#000200">Станция Улица Дмитриевского</text>
+      </msg>
+      <msg>
+        <text color="#000200">Ulitsa Dmitrievskogo station</text>
+      </msg>
+    </arrival>
+    <departure>
+      <msg>
+        <text color="#000200">Следующая станция Косино</text>
+      </msg>
+      <msg>
+        <text color="#000200">Next station is Kosino</text>
+      </msg>
+    </departure>
+  </station>
+  <station name="Косино|Kosino" side="left" up="0" skip="0" pos="0" cityexit="unselect" metro-transfer="1">
+    <transfer name="Лермонтовский проспект|Lermontovskiy Prospekt" crossPlatform="0" isShow="1">
+      <icon>
+        <iconpart color="#89339E" symbol="➆" />
+      </icon>
+    </transfer>
+    <transfer name="Косино|Kosino" crossPlatform="0" isShow="1">
+      <icon>
+        <iconpart color="#F1511B" symbol="" />
+      </icon>
+    </transfer>
+    <transfer name="|" crossPlatform="0" isShow="0">
+      <icon>
+        <iconpart color="#2C75C4" symbol="➥" />
+      </icon>
+    </transfer>
+    <arrival>
+      <msg>
+        <text color="#000200">Станция Косино</text>
+      </msg>
+      <msg>
+        <text color="#000200">Kosino station</text>
+      </msg>
+    </arrival>
+    <departure>
+      <msg>
+        <text color="#000200">Разворот</text>
+      </msg>
+      <msg>
+        <text color="#000200">Разворот</text>
+      </msg>
+    </departure>
+  </station>
+  <station name="Юго-Восточная|Yugo-Vostochnaya" side="right" up="0" skip="0" pos="0" cityexit="unselect" metro-transfer="0">
+    <transfer name="|" crossPlatform="0" isShow="0">
+      <icon>
+        <iconpart color="#2C75C4" symbol="➥" />
+      </icon>
+    </transfer>
+    <arrival />
+    <departure />
+  </station>
+  <station name="Окская|Okskaya" side="right" up="0" skip="0" pos="0" cityexit="unselect" metro-transfer="0">
+    <transfer name="|" crossPlatform="0" isShow="0">
+      <icon>
+        <iconpart color="#2C75C4" symbol="➥" />
+      </icon>
+    </transfer>
+    <arrival />
+    <departure />
+  </station>
+  <station name="Стахановская|Stakhanovskaya" side="right" up="0" skip="0" pos="0" cityexit="unselect" metro-transfer="0">
+    <transfer name="|" crossPlatform="0" isShow="0">
+      <icon>
+        <iconpart color="#2C75C4" symbol="➥" />
+      </icon>
+    </transfer>
+    <arrival />
+    <departure />
+  </station>
+  <station name="Нижегородская|Nizhegorodskaya" side="right" up="0" skip="0" pos="0" cityexit="unselect" metro-transfer="1">
+    <transfer name="|" crossPlatform="0" isShow="1">
+      <icon>
+        <iconpart color="#80D4C9" symbol="➍" />
+      </icon>
+    </transfer>
+    <transfer name="|" crossPlatform="0" isShow="1">
+      <icon>
+        <iconpart color="#DB1F26" symbol="➓" />
+        <iconpart color="#110B09" symbol="➔" />
+      </icon>
+    </transfer>
+    <transfer name="Нижегородская|Nizhegorodskaya" crossPlatform="0" isShow="1">
+      <icon>
+        <iconpart color="#67B088" symbol="" />
+      </icon>
+    </transfer>
+    <transfer name="|" crossPlatform="0" isShow="0">
+      <icon>
+        <iconpart color="#2C75C4" symbol="➥" />
+      </icon>
+    </transfer>
+    <arrival />
+    <departure />
+  </station>
+</line>
