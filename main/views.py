@@ -154,10 +154,12 @@ def index(request):
 def update_status():
     global global_ci, global_count
 
-    statuses = ['door_close', 'door_open', 'departure', 'moving_1', 'moving_2']
+    statuses = ['door_open', 'departure', 'moving_1', 'moving_2', 'door_close']
 
     global_ci = (global_ci + 1) % len(statuses)
     current_status = statuses[global_ci]
+
+    cache.set('current_status', current_status)
 
     return current_status
 
@@ -296,12 +298,12 @@ def send_running_text_container_command(request):
 def get_current_route_data(request):
     try:
         # Получаем текущий статус и информацию о маршруте без обновления индекса
-        current_status = update_status()
+        current_status = cache.get('current_status', 'door_close')
         current_stop_info, next_stop_info = get_current_route_info()
 
-        print(f'Current status: {current_status}')
-        print(f'Current stop info: {current_stop_info}')
-        print(f'Next stop info: {next_stop_info}')
+        # print(f'Current status: {current_status}')
+        # print(f'Current stop info: {current_stop_info}')
+        # print(f'Next stop info: {next_stop_info}')
 
         # Возвращаем данные в формате JSON
         return JsonResponse({
