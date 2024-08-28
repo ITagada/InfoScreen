@@ -212,6 +212,7 @@ document.addEventListener('DOMContentLoaded', function(){
         var labelWrappers = document.querySelectorAll('.label-wrapper');
         var completedSegment = document.getElementById('completed-segment');
 
+        // Найдем текущий индекс остановки по её имени
         currentIndex = stops.findIndex(stop => stop.station.name === currentStop.name);
 
         // Удаление всех старых состояний
@@ -224,55 +225,61 @@ document.addEventListener('DOMContentLoaded', function(){
             labelElement.classList.remove('highlight-label', 'completed-label');
         });
 
+        // Обновление классов для остановок и их меток
         stopElements.forEach(function(stopElement, index) {
             if (index < currentIndex) {
-                if (!stopElement.classList.contains('completed')) {
-                    stopElement.classList.add('completed');
-                }
-            } else if (index === currentIndex) {
+                stopElement.classList.add('completed');
+                stopElement.classList.remove('highlight');
+            } else if (index === currentIndex && status === 'door_open') {
                 stopElement.classList.add('highlight');
-                stopElement.classList.remove('completed');
             } else {
                 stopElement.classList.remove('highlight');
             }
         });
 
-         labelWrappers.forEach(function(labelWrapper, index) {
+        labelWrappers.forEach(function(labelWrapper, index) {
             var labelElement = labelWrapper.querySelector('.label');
             if (index < currentIndex) {
-                if (!labelElement.classList.contains('completed-label')) {
-                    labelElement.classList.add('completed-label');
-                }
-            } else if (index === currentIndex) {
+                labelElement.classList.add('completed-label');
+                labelElement.classList.remove('highlight-label');
+                labelWrapper.classList.remove('highlight-label');
+            } else if (index === currentIndex && status === 'door_open') {
                 labelElement.classList.add('highlight-label');
                 labelWrapper.classList.add('highlight-label');
-                labelElement.classList.remove('completed-label');
             } else {
                 labelElement.classList.remove('highlight-label');
                 labelWrapper.classList.remove('highlight-label');
             }
         });
 
+        // Обновление ширины сегмента "completed"
         if (currentIndex >= 0 && currentIndex < stops.length) {
             completedSegment.style.width = stops[currentIndex].station.position + '%';
         }
 
-        // Добавляем класс анимации перед обновлением текста
+        // Обновление текста с анимацией
         currentStopElement.classList.add('change-station-animation');
         nextStopElement.classList.add('change-station-animation');
 
         setTimeout(() => {
-            if (currentStop.name) {
-                currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name2.toUpperCase();
-            }
-            if (nextStop && stops[currentIndex + 1] && currentIndex < stops.length - 1) {
-                nextStopElement.innerText = 'Следующая остановка / Next station: ' + nextStop.name + " / " + nextStop.name2;
+            if (status === 'departure' || status === 'moving_1' || status === 'moving_2') {
+                currentStopElement.innerText = "ДВИЖЕНИЕ К СТАНЦИИ: " + nextStop.name.toUpperCase();
+            } else if (status === 'door_close') {
+                currentStopElement.innerText = nextStop.name.toUpperCase() + " / " + nextStop.name.toUpperCase();
+                nextStopElement.innerText = '';
             } else {
-                nextStopElement.innerText = 'Конечная остановка / Ending station';
+                if (currentStop.name) {
+                    currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name2.toUpperCase();
+                }
+                if (nextStop && stops[currentIndex + 1] && currentIndex < stops.length - 1) {
+                    nextStopElement.innerText = 'Следующая остановка / Next station: ' + nextStop.name + " / " + nextStop.name2;
+                } else {
+                    nextStopElement.innerText = 'Конечная остановка / Ending station';
+                }
+                displayTransitions(currentStop.transfers);
             }
-            displayTransitions(currentStop.transfers);
 
-            // Удаляем класс анимации после завершения анимации
+            // Удаление класса анимации после её завершения
             setTimeout(function () {
                 currentStopElement.classList.remove('change-station-animation');
                 nextStopElement.classList.remove('change-station-animation');
@@ -472,35 +479,22 @@ document.addEventListener('DOMContentLoaded', function(){
             let data = JSON.parse(e.data);
             console.log('Data:', data);
 
-            // Проверка команды и обновление маршрута
-            if (data.command === "update_route") {
-                console.log('Status: ', data.status);
+            updateRoute(data.current_stop, data.next_stop, data.status)
 
-                if (data.status === 'moving_1') {
-                    sendStopVideoCommand();
-                }
+            // Проверка наличия и валидности статуса
+            if (data.status && typeof data.status === 'string') {
+                data.status = data.status.trim().toLowerCase();  // Приведение статуса к нижнему регистру для унификации
 
                 if (data.status === 'moving_2') {
                     sendPlayVideoCommand();
-                }
-
-                if (data.status === 'door_close') {
+                } else {
                     sendStopVideoCommand();
-                    updateExitIndicator(data.status);
-                }
-
-                if (data.status === 'door_open') {
-                    sendStopVideoCommand();
-                    if (data.current_stop && data.next_stop) {
-                        updateRoute(data.current_stop, data.next_stop, data.status);
+                    if (data.status !== 'moving_1') {
+                        updateExitIndicator(data.status);
                     }
-                    updateExitIndicator(data.status);
                 }
-
-                if (data.status === 'departure') {
-                    sendStopVideoCommand();
-                    updateExitIndicator(data.status);
-                }
+            } else {
+                console.error('Invalid or missing status:', data.status);
             }
 
             //Команда создания контейнера бегущей строки
