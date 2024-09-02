@@ -225,7 +225,7 @@ def send_update_route_command(request):
     try:
         current_status = update_status()
 
-        if current_status == 'door_open':
+        if current_status == 'door_close':
             current_stop_info, next_stop_info = update_route_info()
         else:
             current_stop_info = cache.get('current_stop_info', {})
@@ -301,9 +301,9 @@ def get_current_route_data(request):
         current_status = cache.get('current_status', 'door_close')
         current_stop_info, next_stop_info = get_current_route_info()
 
-        # print(f'Current status: {current_status}')
-        # print(f'Current stop info: {current_stop_info}')
-        # print(f'Next stop info: {next_stop_info}')
+        print(f'Current status: {current_status}')
+        print(f'Current stop info: {current_stop_info}')
+        print(f'Next stop info: {next_stop_info}')
 
         # Возвращаем данные в формате JSON
         return JsonResponse({

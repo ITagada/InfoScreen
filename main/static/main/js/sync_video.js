@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
             videoElement = document.createElement('video');
             videoElement.className = 'video';
             videoElement.classList.add('player-animation');
-            videoElement.src = '/media/video/sample-30s.mp4';
+            videoElement.src = '/media/video/Tried_Me_Mode.mp4';
             videoElement.controls = true;
 
             videoElement.onEnded = function() {

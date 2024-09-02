@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function(){
             if (status === 'departure' || status === 'moving_1' || status === 'moving_2') {
                 currentStopElement.innerText = "ДВИЖЕНИЕ К СТАНЦИИ: " + nextStop.name.toUpperCase();
             } else if (status === 'door_close') {
-                currentStopElement.innerText = nextStop.name.toUpperCase() + " / " + nextStop.name.toUpperCase();
+                currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name.toUpperCase();
                 nextStopElement.innerText = '';
             } else {
                 if (currentStop.name) {
@@ -479,22 +479,25 @@ document.addEventListener('DOMContentLoaded', function(){
             let data = JSON.parse(e.data);
             console.log('Data:', data);
 
-            updateRoute(data.current_stop, data.next_stop, data.status)
+            if (data.command === "update_route") {
 
-            // Проверка наличия и валидности статуса
-            if (data.status && typeof data.status === 'string') {
-                data.status = data.status.trim().toLowerCase();  // Приведение статуса к нижнему регистру для унификации
+                updateRoute(data.current_stop, data.next_stop, data.status)
 
-                if (data.status === 'moving_2') {
-                    sendPlayVideoCommand();
-                } else {
-                    sendStopVideoCommand();
-                    if (data.status !== 'moving_1') {
-                        updateExitIndicator(data.status);
+                // Проверка наличия и валидности статуса
+                if (data.status && typeof data.status === 'string') {
+                    data.status = data.status.trim().toLowerCase();  // Приведение статуса к нижнему регистру для унификации
+
+                    if (data.status === 'moving_2') {
+                        sendPlayVideoCommand();
+                    } else {
+                        sendStopVideoCommand();
+                        if (data.status !== 'moving_1') {
+                            updateExitIndicator(data.status);
+                        }
                     }
+                } else {
+                    console.error('Invalid or missing status:', data.status);
                 }
-            } else {
-                console.error('Invalid or missing status:', data.status);
             }
 
             //Команда создания контейнера бегущей строки
@@ -515,6 +518,7 @@ document.addEventListener('DOMContentLoaded', function(){
                     return response.json();
                 })
                 .then(data => {
+                    console.log('RECONNECTING DATA: ', data);
                     applyInitialData(data.current_stop, data.next_stop, data.status);
                 })
                 .catch(error => {
