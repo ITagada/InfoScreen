@@ -4,12 +4,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let videoStarted = false;
     let videoElement;
     let syncInterval;
-    let lastSyncTime = 0;
+    let serverTimeOffset = 0;  // Смещение времени сервера относительно клиента
+    let videoStartTime = 0;
 
     function createSocket() {
         if (socket && socket.readyState === WebSocket.OPEN) {
             console.log('Socket already open');
-            return; // Прекращаем создание нового соединения, если уже есть открытое
+            return;
         }
 
         socket = new WebSocket('ws://' + window.location.host + '/ws/video_sync/');
@@ -17,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         socket.onopen = function () {
             console.log('VideoSocket is open');
             if (!syncInterval) {
-                syncInterval = setInterval(syncVideo, 1000);
+                syncInterval = setInterval(syncTimeWithServer, 10000); // Периодическая синхронизация времени с сервером
             }
         }
 
@@ -35,9 +36,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (command === "get_state") {
                 handleState(data);
             } else if (command === "start") {
+                videoStartTime = data.start_time;  // Получаем время начала от сервера
                 handleStart(data);
-            } else if (command === "sync" && videoStarted && !videoElement.paused) {
-                handleSync(data);
+            } else if (command === "sync_time") {
+                syncServerTime(data.server_time); // Синхронизация времени с сервером
             } else if (command === "stop" && videoStarted) {
                 handleStop();
             }
@@ -47,76 +49,69 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('VideoSocket closed', event);
             clearInterval(syncInterval);
             syncInterval = null;
-            setTimeout(createSocket, 10000); // Пауза перед повторным подключением
+            setTimeout(createSocket, 10000);
         };
     }
 
-    function syncVideo() {
-        if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
-            const currentTime = videoElement.currentTime;
-            const now = Date.now();
-
-            const syncData = {
-                'current_time': currentTime,
-                'client_time': now / 1000,
-            };
-            socket.send(JSON.stringify(syncData));
+    function syncTimeWithServer() {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({command: 'request_time'})); // Запрос текущего времени сервера
         }
-    };
+    }
+
+    function syncServerTime(serverTime) {
+        const clientTime = Date.now() / 1000;
+        serverTimeOffset = serverTime - clientTime; // Вычисляем смещение времени сервера относительно клиента
+        console.log('Server time offset:', serverTimeOffset);
+    }
 
     function handleState(data) {
-
         const status = data.status;
 
         if (status === 'start') {
             handleStart(data);
         } else if (status === 'stop') {
             handleStop();
-        } else if (status === 'sync') {
-            handleStart(data)
         }
     }
 
     function handleStart(data) {
         if (!videoStarted) {
             createVideoElement();
+            preloadVideo(); // Буферизация перед воспроизведением
         }
 
-        const startTime = data.start_time;
-        videoElement.currentTime = startTime;
+        const clientTime = Date.now() / 1000;
+        const adjustedStartTime = videoStartTime - serverTimeOffset; // Корректируем время старта с учетом смещения
+        const delay = adjustedStartTime - clientTime;
+
+        if (delay > 0) {
+            setTimeout(() => {
+                startVideoPlayback();
+            }, delay * 1000); // Ждем до начала воспроизведения
+        } else {
+            startVideoPlayback(); // Если задержка отрицательная, начинаем сразу
+        }
+    }
+
+    function startVideoPlayback() {
+        videoElement.currentTime = 0;
         videoElement.muted = true;
         videoElement.play().then(() => {
             videoStarted = true;
         }).catch((error) => {
             console.error('Autoplay error:', error);
         });
-        lastSyncTime = startTime;
-    }
-
-    function handleSync(data) {
-        const now = Date.now() / 1000;
-        const serverTime = data.server_time;
-        const estimatedClientTime = data.current_time + (now - serverTime);
-
-        // console.log('Received current time:', currentTime, videoElement.currentTime);
-        const timeDifference = Math.abs(videoElement.currentTime - estimatedClientTime);
-
-        if (timeDifference > 0.1) {
-            videoElement.currentTime = estimatedClientTime;
-
-            videoElement.addEventListener('seeked', function onSeeked() {
-               videoElement.removeEventListener('seeked', onSeeked);
-               videoElement.play().then(() => {
-                   // console.log('Video element synced and started at: ', videoElement.currentTime);
-               }).catch((error) => {
-                   console.error('Resycing error: ', error);
-               });
-            });
-        }
     }
 
     function handleStop() {
         removeVideoElement();
+    }
+
+    function preloadVideo() {
+        if (videoElement) {
+            videoElement.load(); // Буферизирует видео перед его воспроизведением
+        }
     }
 
     createSocket();
@@ -163,8 +158,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function removeVideoElement() {
         if (videoContainerCreated) {
             videoElement.pause();
-            videoElement.removeEventListener('ended', videoElement.onEnded); // Убираем обработчик события
-            videoElement.removeEventListener('timeupdate', videoElement.onTimeUpdate); // Убираем обработчик события
+            videoElement.removeEventListener('ended', videoElement.onEnded);
+            videoElement.removeEventListener('timeupdate', videoElement.onTimeUpdate);
             videoElement.remove();
             videoElement = null;
             videoContainerCreated = false;

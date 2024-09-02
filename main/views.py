@@ -348,7 +348,7 @@ def send_play_video_command(request):
         server_time = time.time()
         global_status = {
             'status': 'start',
-            'start_time': 0,
+            'start_time': server_time,
             'server_time': server_time,
         }
         set_global_status(global_status)
@@ -397,21 +397,3 @@ def get_global_status():
 def set_global_status(status_data):
     cache.set(GLOBAL_STATUS_KEY, status_data, timeout=None)
 
-# {
-#     'stantion': {
-#         'name': name,
-#         'name2': name2,
-#         'side': side,
-#         'up': up,
-#         'skip': skip,
-#         'pos': pos,
-#         'cityexit': cityexit,
-#         'metro_transfer': metro_transfer,
-#         'transfer': {
-#             'transfer_name': transfer_name,
-#             'crossplatform': crossplatform,
-#             'isshow': isshow,
-#             'iconpart': [color, symbol]
-#         }
-#     }
-# }

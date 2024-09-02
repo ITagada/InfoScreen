@@ -12,6 +12,7 @@ services:
     volumes:
       - .:/app
       - ./static:/app/static
+      - ./media:/app/media
       - /home/andrew_q/PycharmProjects/Test/BNT/Nekras_Nizheg.bnt:/app/Nekras_Nizheg.bnt
       - /home/andrew_q/PycharmProjects/Test/BIT/textset3_3.bit:/app/textset3_3.bit
     ports:
