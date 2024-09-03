@@ -1,173 +1,182 @@
 document.addEventListener('DOMContentLoaded', function() {
     let socket;
-    let videoContainerCreated = false;
-    let videoStarted = false;
     let videoElement;
-    let syncInterval;
-    let serverTimeOffset = 0;  // Смещение времени сервера относительно клиента
-    let videoStartTime = 0;
+    let timeOffset = 0;
+    let videoReady = false;
+    let playbackStarted = false;
+    let playbackScheduled = false;
+    const videoSrc = '/media/video/Tried_Me_Mode.mp4';
+    const SYNC_REQUESTS = 10;
+    const SYNC_INTERVAL = 60 * 1000;
+    const START_DELAY = 10;
 
-    function createSocket() {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            console.log('Socket already open');
-            return;
-        }
-
-        socket = new WebSocket('ws://' + window.location.host + '/ws/video_sync/');
-
-        socket.onopen = function () {
-            console.log('VideoSocket is open');
-            if (!syncInterval) {
-                syncInterval = setInterval(syncTimeWithServer, 10000); // Периодическая синхронизация времени с сервером
-            }
-        }
-
-        socket.onerror = function (error) {
-            console.error('VideoSocket error:', error);
-            clearInterval(syncInterval);
-            syncInterval = null;
-            setTimeout(createSocket, 10000);
-        };
-
-        socket.onmessage = function (e) {
-            const data = JSON.parse(e.data);
-            const command = data.command;
-
-            if (command === "get_state") {
-                handleState(data);
-            } else if (command === "start") {
-                videoStartTime = data.start_time;  // Получаем время начала от сервера
-                handleStart(data);
-            } else if (command === "sync_time") {
-                syncServerTime(data.server_time); // Синхронизация времени с сервером
-            } else if (command === "stop" && videoStarted) {
-                handleStop();
-            }
-        };
-
-        socket.onclose = function (event) {
-            console.log('VideoSocket closed', event);
-            clearInterval(syncInterval);
-            syncInterval = null;
-            setTimeout(createSocket, 10000);
-        };
+    async function init() {
+        await syncTimeWithServer();
+        createSocket();
+        createVideoElement();  // Создание видео элемента заранее
+        preloadVideo();  // Предварительная загрузка видео
+        setInterval(syncTimeWithServer, SYNC_INTERVAL);
     }
 
-    function syncTimeWithServer() {
-        if (socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({command: 'request_time'})); // Запрос текущего времени сервера
+    async function syncTimeWithServer() {
+        let offsets = [];
+        for (let i = 0; i < SYNC_REQUESTS; i++) {
+            const offset = await getServerTimeOffset();
+            offsets.push(offset);
         }
+        offsets.sort();
+        offsets = offsets.slice(1, -1);
+        timeOffset = offsets.reduce((sum, val) => sum + val, 0) / offsets.length;
+        console.log(`Синхронизация времени завершена. Смещение: ${timeOffset} ms`);
     }
 
-    function syncServerTime(serverTime) {
-        const clientTime = Date.now() / 1000;
-        serverTimeOffset = serverTime - clientTime; // Вычисляем смещение времени сервера относительно клиента
-        console.log('Server time offset:', serverTimeOffset);
-    }
-
-    function handleState(data) {
-        const status = data.status;
-
-        if (status === 'start') {
-            handleStart(data);
-        } else if (status === 'stop') {
-            handleStop();
-        }
-    }
-
-    function handleStart(data) {
-        if (!videoStarted) {
-            createVideoElement();
-            preloadVideo(); // Буферизация перед воспроизведением
-        }
-
-        const clientTime = Date.now() / 1000;
-        const adjustedStartTime = videoStartTime - serverTimeOffset; // Корректируем время старта с учетом смещения
-        const delay = adjustedStartTime - clientTime;
-
-        if (delay > 0) {
-            setTimeout(() => {
-                startVideoPlayback();
-            }, delay * 1000); // Ждем до начала воспроизведения
-        } else {
-            startVideoPlayback(); // Если задержка отрицательная, начинаем сразу
-        }
-    }
-
-    function startVideoPlayback() {
-        videoElement.currentTime = 0;
-        videoElement.muted = true;
-        videoElement.play().then(() => {
-            videoStarted = true;
-        }).catch((error) => {
-            console.error('Autoplay error:', error);
+    function getServerTimeOffset() {
+        return new Promise((resolve, reject) => {
+            const start = performance.now();
+            fetch('/get_server_time')
+                .then(response => response.json())
+                .then(data => {
+                    const end = performance.now();
+                    const roundTrip = end - start;
+                    const serverTime = data.server_time * 1000;
+                    const clientTime = (start + end) / 2;
+                    const offset = serverTime - clientTime;
+                    resolve(offset);
+                })
+                .catch(err => reject(err));
         });
     }
 
-    function handleStop() {
-        removeVideoElement();
+    function createSocket() {
+        socket = new WebSocket(`ws://${window.location.host}/ws/video_sync/`);
+
+        socket.onopen = () => {
+            console.log('WebSocket connection opened');
+        };
+
+        socket.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            if (data.command === 'start') {
+                handleStartCommand(data.start_time);
+            } else if (data.command === 'stop') {
+                handleStopCommand();
+            }
+        };
+
+        socket.onerror = (e) => {
+            console.error('WebSocket error:', e);
+        };
+
+        socket.onclose = (e) => {
+            console.log('WebSocket connection closed:', e);
+            setTimeout(createSocket, 5000);
+        };
+    }
+
+    function handleStartCommand(serverStartTime) {
+        if (playbackStarted || playbackScheduled) return;
+        const clientStartTime = serverStartTime * 1000 - timeOffset;
+        const now = performance.now();
+        const delay = clientStartTime - now;
+
+        console.log(`Получена команда старт. Запуск через ${delay} ms`);
+
+        if (delay < 0) {
+            startPlayback();
+        } else {
+            playbackScheduled = true;
+            startTimeoutId = setTimeout(() => {
+                playbackScheduled = false;
+                startPlayback();
+            }, delay);
+        }
+    }
+
+    function handleStopCommand() {
+        if (playbackScheduled) {
+            clearTimeout(startTimeoutId);
+            playbackScheduled = false;
+            console.log('Запланированное воспроизведение отменено');
+        }
+
+        if (videoElement) {
+            videoElement.pause();
+            videoElement.currentTime = 0;
+            playbackStarted = false;
+            hideVideoElement();
+        }
+    }
+
+    function createVideoElement() {
+        const videoContainer = document.querySelector('.col-3-2');
+
+        if (!videoContainer) {
+            console.error('Video container not found');
+            return;
+        }
+
+        videoElement = document.createElement('video');
+        videoElement.className = 'video';
+        videoElement.classList.add('player-animation');
+        videoElement.src = videoSrc;
+        videoElement.controls = true;
+        videoElement.muted = true; // Отключаем звук для возможности автостарта
+
+        videoElement.onended = function() {
+            if (playbackStarted) {
+                videoElement.currentTime = 0;
+                videoElement.addEventListener('seeked', function onSeeked() {
+                    videoElement.removeEventListener('seeked', onSeeked);
+                    videoElement.play();
+                    socket.send(JSON.stringify({
+                        command: 'reset_time',
+                    }));
+                });
+            }
+        };
+
+        videoContainer.appendChild(videoElement);
+        hideVideoElement();
     }
 
     function preloadVideo() {
-        if (videoElement) {
-            videoElement.load(); // Буферизирует видео перед его воспроизведением
-        }
+        videoElement.load();
+        videoElement.addEventListener('canplaythrough', () => {
+            videoReady = true;
+        });
     }
 
-    createSocket();
-
-    function createVideoElement() {
-        if (!videoContainerCreated) {
-            const videoContainer = document.querySelector('.col-3-2');
-
-            if (!videoContainer) {
-                console.error('Video container not found');
-                return;
-            }
-
-            videoElement = document.createElement('video');
-            videoElement.className = 'video';
-            videoElement.classList.add('player-animation');
-            videoElement.src = '/media/video/Tried_Me_Mode.mp4';
-            videoElement.controls = true;
-
-            videoElement.onEnded = function() {
-                if (videoStarted) {
-                    videoElement.currentTime = 0;
-                    videoElement.addEventListener('seeked', function onSeeked() {
-                        videoElement.removeEventListener('seeked', onSeeked);
-                        videoElement.play();
-                        socket.send(JSON.stringify({
-                            command: 'reset_time',
-                        }));
-                    });
-                }
+    function startPlayback() {
+        if (!videoReady) {
+            console.log('Видео еще не готово, ожидание...');
+            videoElement.oncanplaythrough = () => {
+                videoReady = true;
+                showVideoElement();
+                videoElement.play().then(() => {
+                    playbackStarted = true;
+                    console.log('Video playback started');
+                }).catch(err => console.error('Ошибка при воспроизведении:', err));
             };
-
-            videoElement.addEventListener('ended', videoElement.onEnded);
-            videoElement.addEventListener('timeupdate', videoElement.onTimeUpdate);
-
-            videoContainer.appendChild(videoElement);
-            videoContainerCreated = true;
-            setTimeout(function () {
-                videoElement.classList.remove('player-animation');
-            }, 500);
+        } else {
+            showVideoElement();
+            videoElement.play().then(() => {
+                playbackStarted = true;
+                console.log('Video playback started');
+            }).catch(err => console.error('Ошибка при воспроизведении:', err));
         }
     }
 
-    function removeVideoElement() {
-        if (videoContainerCreated) {
-            videoElement.pause();
-            videoElement.removeEventListener('ended', videoElement.onEnded);
-            videoElement.removeEventListener('timeupdate', videoElement.onTimeUpdate);
-            videoElement.remove();
-            videoElement = null;
-            videoContainerCreated = false;
-            videoStarted = false;
+    function showVideoElement() {
+        if (videoElement) {
+            videoElement.style.display = 'block';
         }
     }
 
-    window.addEventListener('beforeunload', function () {
-        clearInterval(syncInterval);
-    });
+    function hideVideoElement() {
+        if (videoElement) {
+            videoElement.style.display = 'none';
+        }
+    }
+
+    init();
 });

@@ -341,6 +341,11 @@ def get_screen_info2(request):
     return render(request, 'main/get_screen_info2.html', context)
 
 
+def get_server_time(request):
+    server_time = time.time()
+    return JsonResponse({'server_time': server_time})
+
+
 def send_play_video_command(request):
     channel_layer = get_channel_layer()
 
@@ -348,7 +353,7 @@ def send_play_video_command(request):
         server_time = time.time()
         global_status = {
             'status': 'start',
-            'start_time': server_time,
+            'start_time': server_time + 2,
             'server_time': server_time,
         }
         set_global_status(global_status)

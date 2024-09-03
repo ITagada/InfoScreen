@@ -177,15 +177,15 @@ CACHES = {
     }
 }
 
-CELERY_BROKER_URL = 'redis://redis:6379/1'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/1'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_BEAT_SCHEDULE = {
-    'schelude_check_and_sync_video': {
-        'task': 'main.tasks.schedule_check_and_sync_video',
-        'schedule': 5.0,
-    },
-}
+# CELERY_BROKER_URL = 'redis://redis:6379/1'
+# CELERY_RESULT_BACKEND = 'redis://redis:6379/1'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TIMEZONE = TIME_ZONE
+# CELERY_BEAT_SCHEDULE = {
+#     'schelude_check_and_sync_video': {
+#         'task': 'main.tasks.schedule_check_and_sync_video',
+#         'schedule': 5.0,
+#     },
+# }
