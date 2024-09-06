@@ -1,13 +1,42 @@
 document.addEventListener('DOMContentLoaded', function(){
-    // Создание контейнеров динамически
-    var container2 = document.getElementById('container-2');
-    var container1 = document.getElementById('container-1');
+    // Получение данных остановок из контейнера
+    var stops = JSON.parse(document.getElementById('stops-data').textContent)
+    console.log('Stops data', stops);
 
-    var col2_1 = document.createElement('div');
+    // Создание контейнеров динамически
+    var mainContainer = document.createElement('div');
+    mainContainer.className = 'main';
+    document.body.appendChild(mainContainer);
+
+    var container1 = document.createElement('div');
+    container1.className = 'container-1';
+    container1.id = 'container-1';
+    mainContainer.appendChild(container1);
+
+    var headerChange = document.createElement('div');
+    headerChange.className = 'col-1-1-1';
+    headerChange.id = 'col-1-1-1';
+    container1.appendChild(headerChange);
+
+    var headerText = document.createElement('h2');
+    headerText.innerText = 'Пересадки / Change here for';
+    headerChange.appendChild(headerText);
+
+     var transitionsContainer = document.createElement('div');
+    transitionsContainer.className = 'col-1-1';
+    transitionsContainer.id = 'col-1-1';
+    container1.appendChild(transitionsContainer);
+
+    var container2 = document.createElement('div');
+    container2.className = 'container-2';
+    container2.id = 'container-2';
+    mainContainer.appendChild(container2);
+
+     var col2_1 = document.createElement('div');
     col2_1.className = 'col-2-1';
     container2.appendChild(col2_1);
 
-    var currentStopElement = document.createElement('div');
+     var currentStopElement = document.createElement('div');
     currentStopElement.className = 'current-stop';
     currentStopElement.id = 'current-stop';
     currentStopElement.innerText = 'Current stop: ';
@@ -38,23 +67,117 @@ document.addEventListener('DOMContentLoaded', function(){
     completedSegment.id = 'completed-segment';
     routeElement.appendChild(completedSegment);
 
-    // Получение данных остановок из контейнера
-    var stops = JSON.parse(document.getElementById('stops-data').textContent);
-    console.log('Stops data', stops);
+    var container3 = document.createElement('div');
+    container3.className = 'container-3';
+    container3.id = 'container-3';
+    mainContainer.appendChild(container3);
 
-    var headerChange = document.createElement('div');
-    headerChange.className = 'col-1-1-1';
-    headerChange.id = 'col-1-1-1';
-    container1.appendChild(headerChange);
+    var col3_1 = document.createElement('div');
+    col3_1.className = 'col-3-1';
+    col3_1.id = 'col-3-1';
+    container3.appendChild(col3_1);
 
-    var headerText = document.createElement('h2');
-    headerText.innerText = 'Пересадки / Change here for';
-    headerChange.appendChild(headerText);
+    var col3_1_1 = document.createElement('div');
+    col3_1_1.className = 'col-3-1-1';
+    col3_1_1.id =  'col-3-1-1';
+    col3_1.appendChild(col3_1_1);
 
-    var transitionsContainer = document.createElement('div');
-    transitionsContainer.className = 'col-1-1';
-    transitionsContainer.id = 'col-1-1';
-    container1.appendChild(transitionsContainer);
+    var col3_1_1_1 = document.createElement('div');
+    col3_1_1_1.className = 'col-3-1-1-1';
+    col3_1_1_1.id =  'col-3-1-1-1';
+    col3_1_1_1.innerText = 'Поезд следует до остановки / Terminal station:';
+    col3_1_1.appendChild(col3_1_1_1);
+
+    var col3_1_1_2 = document.createElement('div');
+    col3_1_1_2.className = 'col-3-1-1-2';
+    col3_1_1_2.id = 'col-3-1-1-2';
+    if (stops && stops.length > 0) {
+        var lastStop = stops[stops.length - 1];
+        var lastStopName = lastStop.station.name;
+        var lastStopName2 = lastStop.station.name2;
+    }
+    col3_1_1_2.innerText = lastStopName + ' / ' + lastStopName2;
+    col3_1_1.appendChild(col3_1_1_2);
+
+    var col3_1_2 = document.createElement('div');
+    col3_1_2.className = 'col-3-1-2';
+    col3_1_2.id = 'col-3-1-2';
+    col3_1.appendChild(col3_1_2);
+
+    var time = document.createElement('div');
+    time.className = 'time';
+    time.id = 'time';
+    col3_1_2.appendChild(time);
+
+    var date = document.createElement('div');
+    date.className = 'date';
+    date.id = 'date';
+    col3_1_2.appendChild(date);
+
+    var col3_1_3 = document.createElement('div');
+    col3_1_3.className = 'col-3-1-3';
+    col3_1_3.id = 'col-3-1-3';
+    col3_1.appendChild(col3_1_3);
+
+    var temperature = document.createElement('div');
+    temperature.className = 'temperature';
+    temperature.id = 'temperature';
+    temperature.innerText = 'температура воздуха:';
+    col3_1_3.appendChild(temperature);
+
+    var inside = document.createElement('div');
+    inside.className = 'inside';
+    inside.id = 'inside';
+    col3_1_3.appendChild(inside);
+
+    var insidehead = document.createElement('div');
+    insidehead.className = 'insidehead';
+    insidehead.id = 'insidehead';
+    insidehead.innerText = 'в салоне / salon'
+    inside.appendChild(insidehead);
+
+    var insidebody = document.createElement('div');
+    insidebody.className = 'insidebody';
+    insidebody.id = 'insidebody';
+    inside.appendChild(insidebody);
+
+    var outside = document.createElement('div');
+    outside.className = 'outside';
+    outside.id = 'outside';
+    col3_1_3.appendChild(outside);
+
+    var outsidehead = document.createElement('div');
+    outsidehead.className = 'outsidehead';
+    outsidehead.id = 'outsidehead';
+    outsidehead.innerText = 'на улице / outdoor'
+    outside.appendChild(outsidehead);
+
+    var outsidebody = document.createElement('div');
+    outsidebody.className = 'outsidebody';
+    outsidebody.id = 'outsidebody';
+    outside.appendChild(outsidebody);
+
+    var col3_2 = document.createElement('div');
+    col3_2.className = 'col-3-2';
+    col3_2.id = 'col-3-2';
+    container3.appendChild(col3_2);
+
+    function updateTime() {
+        var nowDateTime = new Date();
+        var dateOptions = {
+             weekday: "short", year: "numeric", month: "long", day: "numeric"
+        }   ;
+        var timeOptions = {
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        };
+        var formattedDate = nowDateTime.toLocaleDateString('ru-RU', dateOptions);
+        var formattedTime = nowDateTime.toLocaleTimeString('ru-RU', timeOptions);
+        document.getElementById('time').innerText = formattedTime;
+        document.getElementById('date').innerText = formattedDate;
+    }
+    setInterval(updateTime, 1000);
+
+    updateTime();
 
     // Создание необходимых контейнеров и наполнение их данными
     stops.forEach(function(stop, index) {
@@ -84,63 +207,142 @@ document.addEventListener('DOMContentLoaded', function(){
     var currentIndex = 0;
 
     // Основная логика иммитации передвижения
-    function updateRoute(currentStop, nextStop) {
+    function updateRoute(currentStop, nextStop, status) {
         var stopElements = document.querySelectorAll('.stop');
         var labelWrappers = document.querySelectorAll('.label-wrapper');
+        var completedSegment = document.getElementById('completed-segment');
 
+        // Найдем текущий индекс остановки по её имени
         currentIndex = stops.findIndex(stop => stop.station.name === currentStop.name);
 
+        // Удаление всех старых состояний
+        stopElements.forEach(function(stopElement) {
+            stopElement.classList.remove('highlight', 'completed');
+        });
+
+        labelWrappers.forEach(function(labelWrapper) {
+            var labelElement = labelWrapper.querySelector('.label');
+            labelElement.classList.remove('highlight-label', 'completed-label');
+        });
+
+        // Обновление классов для остановок и их меток
         stopElements.forEach(function(stopElement, index) {
-            stopElement.classList.remove('completed', 'highlight');
             if (index < currentIndex) {
                 stopElement.classList.add('completed');
-            } else if (index === currentIndex) {
+                stopElement.classList.remove('highlight');
+            } else if (index === currentIndex && status === 'door_open') {
                 stopElement.classList.add('highlight');
+            } else {
+                stopElement.classList.remove('highlight');
             }
         });
 
-        // Функция обертки для анимации
         labelWrappers.forEach(function(labelWrapper, index) {
             var labelElement = labelWrapper.querySelector('.label');
-            labelElement.classList.remove('completed-label', 'highlight-label');
-            labelWrapper.classList.remove('highlight-label');
             if (index < currentIndex) {
                 labelElement.classList.add('completed-label');
-            } else if (index === currentIndex) {
+                labelElement.classList.remove('highlight-label');
+                labelWrapper.classList.remove('highlight-label');
+            } else if (index === currentIndex && status === 'door_open') {
                 labelElement.classList.add('highlight-label');
                 labelWrapper.classList.add('highlight-label');
+            } else {
+                labelElement.classList.remove('highlight-label');
+                labelWrapper.classList.remove('highlight-label');
             }
         });
 
-        // Проверка текущего положения указателя остановки
+        // Обновление ширины сегмента "completed"
         if (currentIndex >= 0 && currentIndex < stops.length) {
             completedSegment.style.width = stops[currentIndex].station.position + '%';
-        } else {
-            completedSegment.style.width = '0%';
         }
 
-        // Добавляем класс анимации перед обновлением текста
+        // Обновление текста с анимацией
         currentStopElement.classList.add('change-station-animation');
         nextStopElement.classList.add('change-station-animation');
 
-        // Функция создания контейнера под передаваемые данные и передача в
-        // него данных
         setTimeout(() => {
-            currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name2.toUpperCase();
-            if (nextStop) {
-                nextStopElement.innerText = 'Следующая остановка / Next station: ' + nextStop.name + " / " + nextStop.name2;
+            if (status === 'departure' || status === 'moving_1' || status === 'moving_2') {
+                currentStopElement.innerText = "ДВИЖЕНИЕ К СТАНЦИИ: " + nextStop.name.toUpperCase();
+            } else if (status === 'door_close') {
+                currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name.toUpperCase();
+                nextStopElement.innerText = '';
             } else {
-                nextStopElement.innerText = 'Конечная остановка / Ending station';
+                if (currentStop.name) {
+                    currentStopElement.innerText = currentStop.name.toUpperCase() + " / " + currentStop.name2.toUpperCase();
+                }
+                if (nextStop && stops[currentIndex + 1] && currentIndex < stops.length - 1) {
+                    nextStopElement.innerText = 'Следующая остановка / Next station: ' + nextStop.name + " / " + nextStop.name2;
+                } else {
+                    nextStopElement.innerText = 'Конечная остановка / Ending station';
+                }
+                displayTransitions(currentStop.transfers);
             }
-            displayTransitions(currentStop.transfers);
 
-            // Удаляем класс анимации после завершения анимации
+            // Удаление класса анимации после её завершения
             setTimeout(function () {
                 currentStopElement.classList.remove('change-station-animation');
                 nextStopElement.classList.remove('change-station-animation');
             }, 500);
-        }, 10);
+        }, 100);
     }
+
+    function sendPlayVideoCommand() {
+        fetch('/send_play_video_command/')
+            .then(response => response.text())
+            .catch(err => console.error('Error sending play video command:', err));
+    }
+
+    function sendStopVideoCommand() {
+        fetch('/send_stop_video_command/')
+            .then(response => response.text())
+            .catch(err => console.error('Error sending stop video command:', err));
+    }
+
+    function updateExitIndicator(doorStatus) {
+        var col3_2 = document.querySelector('.col-3-2');
+        var exitIndicator = document.getElementById('exit-indicator');
+
+        if (!exitIndicator) {
+            exitIndicator = document.createElement('div');
+            exitIndicator.id = 'exit-indicator';
+            exitIndicator.classList.add('exit-indicator');
+            col3_2.appendChild(exitIndicator);
+
+            var exitText = document.createElement('div');
+            exitText.className = 'exit-text';
+            exitText.id = 'exit-text';
+            exitText.innerText = 'ВЫХОД / EXIT';
+            exitIndicator.appendChild(exitText);
+
+            var arrow = document.createElement('div');
+            arrow.className = 'arrow';
+            arrow.id = 'arrow';
+            exitIndicator.appendChild(arrow);
+
+            var person = document.createElement('div');
+            person.className = 'person';
+            person.id = 'person';
+            exitIndicator.appendChild(person);
+        }
+
+        if (doorStatus === 'door_open' || doorStatus === 'door_close') {
+            exitIndicator.style.display = 'flex';
+            setTimeout(function () {
+                exitIndicator.classList.add('show');
+                exitIndicator.classList.remove('hide');
+            }, 200);
+        } else {
+            exitIndicator.classList.add('hide');
+            exitIndicator.classList.remove('show');
+            setTimeout(function () {
+                if (exitIndicator.classList.contains('hide')) {
+                    exitIndicator.remove();
+                }
+            }, 500);
+        }
+    }
+
 
     // Функция создания контейнера под передаваемые данные и передача в него
     // данных
@@ -244,6 +446,27 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     }
 
+    function applyInitialData(current_stop, next_stop, status) {
+        document.getElementById('current-stop').innerText = current_stop;
+        document.getElementById('next-stop').innerText = next_stop;
+
+        if (status === 'moving_1') {
+            sendStopVideoCommand();
+        }
+
+        if (status === 'moving_2') {
+            sendPlayVideoCommand();
+        }
+
+        if (status === 'door_close' || status === 'door_open' || status === 'departure') {
+            sendStopVideoCommand();
+            updateExitIndicator(status);
+        }
+
+        updateRoute(current_stop, next_stop, status);
+
+    }
+
     let url = `ws://${window.location.host}/ws/socket-server/`;
     let mainSocket;
     let pingInterval;
@@ -256,9 +479,25 @@ document.addEventListener('DOMContentLoaded', function(){
             let data = JSON.parse(e.data);
             console.log('Data:', data);
 
-            // Проверка команды и обновление маршрута
             if (data.command === "update_route") {
-                updateRoute(data.current_stop, data.next_stop);
+
+                updateRoute(data.current_stop, data.next_stop, data.status)
+
+                // Проверка наличия и валидности статуса
+                if (data.status && typeof data.status === 'string') {
+                    data.status = data.status.trim().toLowerCase();  // Приведение статуса к нижнему регистру для унификации
+
+                    if (data.status === 'moving_2') {
+                        sendPlayVideoCommand();
+                    } else {
+                        sendStopVideoCommand();
+                        if (data.status !== 'moving_1') {
+                            updateExitIndicator(data.status);
+                        }
+                    }
+                } else {
+                    console.error('Invalid or missing status:', data.status);
+                }
             }
 
             //Команда создания контейнера бегущей строки
@@ -270,12 +509,21 @@ document.addEventListener('DOMContentLoaded', function(){
         mainSocket.onopen = function (e) {
             console.log('WebSocket connection opened');
             startPing();
+
             fetch('/get-current-route-data/')
-                .then(response => response.json())
-                .then(data => {
-                    updateRoute(data.current_stop, data.next_stop)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
                 })
-                .catch(error => console.error('Fetching data: ', error));
+                .then(data => {
+                    console.log('RECONNECTING DATA: ', data);
+                    applyInitialData(data.current_stop, data.next_stop, data.status);
+                })
+                .catch(error => {
+                    console.error('Fetching data failed: ', error);
+                });
         };
 
         mainSocket.onerror = function (e) {
@@ -315,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     connectWebSocket()
 
-    if (stops.length > 0) {
-        updateRoute(stops[0], stops[1]);
-    }
+    // if (stops.length > 0) {
+    //     updateRoute(stops[0], stops[1]);
+    // }
 });

@@ -9,6 +9,8 @@ COPY requirements.txt /app/
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN pip install ansible-runner
+
 COPY . /app/
 COPY static /app/static
 
@@ -19,4 +21,6 @@ EXPOSE 8000
 
 RUN python manage.py collectstatic --noinput
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+RUN pip install daphne
+
+CMD ["daphne", "-u", "app/daphne.sock", "infoscreen.asgi:application"]

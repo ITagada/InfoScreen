@@ -9,6 +9,8 @@ from django.core.cache import cache
 from channels.layers import get_channel_layer, channel_layers
 from asgiref.sync import async_to_sync
 
+from .consumers import CLIENTS_IP
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -244,7 +246,7 @@ def send_update_route_command(request):
                 'status': current_status,
             }
         )
-        print('Status: ', current_status)
+        print(current_status)
     except Exception as e:
         return JsonResponse({'status': 'fail', 'message': str(e)})
     return render(request, 'main/send-update-route-command.html')
@@ -300,10 +302,6 @@ def get_current_route_data(request):
         # Получаем текущий статус и информацию о маршруте без обновления индекса
         current_status = cache.get('current_status', 'door_close')
         current_stop_info, next_stop_info = get_current_route_info()
-
-        print(f'Current status: {current_status}')
-        print(f'Current stop info: {current_stop_info}')
-        print(f'Next stop info: {next_stop_info}')
 
         # Возвращаем данные в формате JSON
         return JsonResponse({

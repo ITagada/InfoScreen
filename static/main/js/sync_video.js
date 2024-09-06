@@ -1,181 +1,181 @@
 document.addEventListener('DOMContentLoaded', function() {
     let socket;
-    let videoContainerCreated = false;
-    let videoStarted = false;
     let videoElement;
-    let syncInterval;
-    let lastSyncTime = 0;
+    let timeOffset = 0;
+    let videoReady = false;
+    let playbackStarted = false;
+    let playbackScheduled = false;
+    const videoSrc = '/media/video/Tried_Me_Mode.mp4';
+    const SYNC_REQUESTS = 10;
+    const SYNC_INTERVAL = 60 * 1000;
+    const START_DELAY = 2;
+
+    async function init() {
+        await syncTimeWithServer();
+        createSocket();
+        createVideoElement();  // Создание видео элемента заранее
+        preloadVideo();  // Предварительная загрузка видео
+        setInterval(syncTimeWithServer, SYNC_INTERVAL);
+    }
+
+    async function syncTimeWithServer() {
+        let offsets = [];
+        for (let i = 0; i < SYNC_REQUESTS; i++) {
+            const offset = await getServerTimeOffset();
+            offsets.push(offset);
+        }
+        offsets.sort();
+        offsets = offsets.slice(1, -1);
+        timeOffset = offsets.reduce((sum, val) => sum + val, 0) / offsets.length;
+    }
+
+    function getServerTimeOffset() {
+        return new Promise((resolve, reject) => {
+            const start = performance.now();
+            fetch('/get_server_time')
+                .then(response => response.json())
+                .then(data => {
+                    const end = performance.now();
+                    const roundTrip = end - start;
+                    const serverTime = data.server_time * 1000;
+                    const clientTime = (start + end) / 2;
+                    const offset = serverTime - clientTime;
+                    resolve(offset);
+                })
+                .catch(err => reject(err));
+        });
+    }
 
     function createSocket() {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            console.log('Socket already open');
-            return; // Прекращаем создание нового соединения, если уже есть открытое
-        }
+        socket = new WebSocket(`ws://${window.location.host}/ws/video_sync/`);
 
-        socket = new WebSocket('ws://' + window.location.host + '/ws/video_sync/');
-
-        socket.onopen = function () {
-            console.log('VideoSocket is open');
-            if (!syncInterval) {
-                syncInterval = setInterval(syncVideo, 1000);
-            }
-        }
-
-        socket.onerror = function (error) {
-            console.error('VideoSocket error:', error);
-            clearInterval(syncInterval);
-            syncInterval = null;
-            setTimeout(createSocket, 10000);
+        socket.onopen = () => {
+            console.log('WebSocket connection opened');
         };
 
-        socket.onmessage = function (e) {
+        socket.onmessage = (e) => {
             const data = JSON.parse(e.data);
-            const command = data.command;
-
-            console.log(`Received command: ${command}`); // Логи для отладки
-
-            if (command === "get_state") {
-                handleState(data);
-            } else if (command === "start") {
-                handleStart(data);
-            } else if (command === "sync" && videoStarted && !videoElement.paused) {
-                handleSync(data);
-            } else if (command === "stop" && videoStarted) {
-                handleStop();
+            if (data.command === 'start') {
+                handleStartCommand(data.start_time);
+            } else if (data.command === 'stop') {
+                handleStopCommand();
             }
         };
 
-        socket.onclose = function (event) {
-            console.log('VideoSocket closed', event);
-            clearInterval(syncInterval);
-            syncInterval = null;
-            setTimeout(createSocket, 10000); // Пауза перед повторным подключением
+        socket.onerror = (e) => {
+            console.error('WebSocket error:', e);
+        };
+
+        socket.onclose = (e) => {
+            console.log('WebSocket connection closed:', e);
+            setTimeout(createSocket, 5000);
         };
     }
 
-    function syncVideo() {
-        if (videoStarted && !videoElement.paused && socket.readyState === WebSocket.OPEN) {
-            const currentTime = videoElement.currentTime;
-            const now = Date.now();
+    function handleStartCommand(serverStartTime) {
+        if (playbackStarted || playbackScheduled) return;
+        const clientStartTime = serverStartTime * 1000 - timeOffset;
+        const now = performance.now();
+        const delay = clientStartTime - now;
 
-            const syncData = {
-                'current_time': currentTime,
-                'client_time': now / 1000,
-            };
-            socket.send(JSON.stringify(syncData));
-        }
-    };
+        console.log(`Получена команда старт. Запуск через ${delay} ms`);
 
-    function handleState(data) {
-        console.log(`Handling state: ${data.status}`); // Логи для отладки
-
-        const status = data.status;
-
-        if (status === 'start') {
-            handleStart(data);
-        } else if (status === 'stop') {
-            handleStop();
-        } else if (status === 'sync') {
-            handleStart(data)
+        if (delay < 0) {
+            startPlayback();
+        } else {
+            playbackScheduled = true;
+            startTimeoutId = setTimeout(() => {
+                playbackScheduled = false;
+                startPlayback();
+            }, delay);
         }
     }
 
-    function handleStart(data) {
-        if (!videoStarted) {
-            createVideoElement();
+    function handleStopCommand() {
+        if (playbackScheduled) {
+            clearTimeout(startTimeoutId);
+            playbackScheduled = false;
+            console.log('Запланированное воспроизведение отменено');
         }
 
-        const startTime = data.start_time;
-        videoElement.currentTime = startTime;
-        videoElement.muted = true;
-        videoElement.play().then(() => {
-            videoStarted = true;
-        }).catch((error) => {
-            console.error('Autoplay error:', error);
-        });
-        lastSyncTime = startTime;
-    }
-
-    function handleSync(data) {
-        const now = Date.now() / 1000;
-        const serverTime = data.server_time;
-        const estimatedClientTime = data.current_time + (now - serverTime);
-
-        // console.log('Received current time:', currentTime, videoElement.currentTime);
-        const timeDifference = Math.abs(videoElement.currentTime - estimatedClientTime);
-
-        if (timeDifference > 0.1) {
-            videoElement.currentTime = estimatedClientTime;
-
-            videoElement.addEventListener('seeked', function onSeeked() {
-               videoElement.removeEventListener('seeked', onSeeked);
-               videoElement.play().then(() => {
-                   // console.log('Video element synced and started at: ', videoElement.currentTime);
-               }).catch((error) => {
-                   console.error('Resycing error: ', error);
-               });
-            });
+        if (videoElement) {
+            videoElement.pause();
+            videoElement.currentTime = 0;
+            playbackStarted = false;
+            hideVideoElement();
         }
     }
-
-    function handleStop() {
-        removeVideoElement();
-    }
-
-    createSocket();
 
     function createVideoElement() {
-        if (!videoContainerCreated) {
-            const videoContainer = document.querySelector('.col-3-2');
+        const videoContainer = document.querySelector('.col-3-2');
 
-            if (!videoContainer) {
-                console.error('Video container not found');
-                return;
+        if (!videoContainer) {
+            console.error('Video container not found');
+            return;
+        }
+
+        videoElement = document.createElement('video');
+        videoElement.className = 'video';
+        videoElement.classList.add('player-animation');
+        videoElement.src = videoSrc;
+        videoElement.controls = true;
+        videoElement.muted = true; // Отключаем звук для возможности автостарта
+
+        videoElement.onended = function() {
+            if (playbackStarted) {
+                videoElement.currentTime = 0;
+                videoElement.addEventListener('seeked', function onSeeked() {
+                    videoElement.removeEventListener('seeked', onSeeked);
+                    videoElement.play();
+                    socket.send(JSON.stringify({
+                        command: 'reset_time',
+                    }));
+                });
             }
+        };
 
-            videoElement = document.createElement('video');
-            videoElement.className = 'video';
-            videoElement.classList.add('player-animation');
-            videoElement.src = '/media/video/sample-30s.mp4';
-            videoElement.controls = true;
+        videoContainer.appendChild(videoElement);
+        hideVideoElement();
+    }
 
-            videoElement.onEnded = function() {
-                if (videoStarted) {
-                    videoElement.currentTime = 0;
-                    videoElement.addEventListener('seeked', function onSeeked() {
-                        videoElement.removeEventListener('seeked', onSeeked);
-                        videoElement.play();
-                        socket.send(JSON.stringify({
-                            command: 'reset_time',
-                        }));
-                    });
-                }
+    function preloadVideo() {
+        videoElement.load();
+        videoElement.addEventListener('canplaythrough', () => {
+            videoReady = true;
+        });
+    }
+
+    function startPlayback() {
+        if (!videoReady) {
+            console.log('Видео еще не готово, ожидание...');
+            videoElement.oncanplaythrough = () => {
+                videoReady = true;
+                showVideoElement();
+                videoElement.play().then(() => {
+                    playbackStarted = true;
+                    console.log('Video playback started');
+                }).catch(err => console.error('Ошибка при воспроизведении:', err));
             };
-
-            videoElement.addEventListener('ended', videoElement.onEnded);
-            videoElement.addEventListener('timeupdate', videoElement.onTimeUpdate);
-
-            videoContainer.appendChild(videoElement);
-            videoContainerCreated = true;
-            setTimeout(function () {
-                videoElement.classList.remove('player-animation');
-            }, 500);
+        } else {
+            showVideoElement();
+            videoElement.play().then(() => {
+                playbackStarted = true;
+                console.log('Video playback started');
+            }).catch(err => console.error('Ошибка при воспроизведении:', err));
         }
     }
 
-    function removeVideoElement() {
-        if (videoContainerCreated) {
-            videoElement.pause();
-            videoElement.removeEventListener('ended', videoElement.onEnded); // Убираем обработчик события
-            videoElement.removeEventListener('timeupdate', videoElement.onTimeUpdate); // Убираем обработчик события
-            videoElement.remove();
-            videoElement = null;
-            videoContainerCreated = false;
-            videoStarted = false;
+    function showVideoElement() {
+        if (videoElement) {
+            videoElement.style.display = 'block';
         }
     }
 
-    window.addEventListener('beforeunload', function () {
-        clearInterval(syncInterval);
-    });
+    function hideVideoElement() {
+        if (videoElement) {
+            videoElement.style.display = 'none';
+        }
+    }
+
+    init();
 });

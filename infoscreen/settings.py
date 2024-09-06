@@ -11,7 +11,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.55', '127.0.0.1', 'localhost', '0.0.0.0']
+ALLOWED_HOSTS = ['192.168.1.55', '127.0.0.1', 'localhost', '0.0.0.0', '192.168.5.251']
 
 """ Обязательные настройки: добавление приложений channels, daphne. 
  Так же нужно прописать ASGI_APPLICATION для какого приложения будет доступно асинхронная структура"""

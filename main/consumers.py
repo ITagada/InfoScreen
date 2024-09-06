@@ -5,8 +5,8 @@ import time
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
 
-from .views import get_global_status, set_global_status
 
+CLIENTS_IP = []
 
 class ScreenConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -14,6 +14,9 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         self.group_name = None
 
     async def connect(self):
+        ip_address = self.scope['client'][0]
+        if ip_address not in CLIENTS_IP:
+            CLIENTS_IP.append(ip_address)
         self.group_name = 'route_updates'
         await self.channel_layer.group_add(
             self.group_name,
@@ -27,6 +30,9 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         }))
 
     async def disconnect(self, close_code):
+        client_ip = self.scope['client'][0]
+        if client_ip in CLIENTS_IP:
+            CLIENTS_IP.remove(client_ip)
         await self.channel_layer.group_discard(
             self.group_name,
             self.channel_name
@@ -72,6 +78,7 @@ class ScreenConsumer(AsyncWebsocketConsumer):
 class SyncVideoConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
+        from .views import get_global_status
         self.client_cache_key = self.channel_name
         await self.channel_layer.group_add('video_sync_group', self.channel_name)
         await self.accept()
@@ -142,6 +149,7 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
             await self.handle_sync(data)
 
     async def handle_start(self, data):
+        from .views import set_global_status
         start_time = data.get("start_time", 0)
         server_time = time.time()
         global_status = {
@@ -173,6 +181,7 @@ class SyncVideoConsumer(AsyncWebsocketConsumer):
             cache.set('client_data', client_data, timeout=None)
 
     async def handle_stop(self):
+        from .views import set_global_status
         global_status = {
             'status': 'stop',
             'start_time': None,

@@ -37,7 +37,7 @@
 
 .label {
     position: absolute;
-    transform: rotate(60deg);
+    transform: rotate(30deg);
     transform-origin: top left;
     transition: color 0.3s, transform 0.3s;
     overflow-wrap: break-word;
@@ -49,6 +49,7 @@
     display: inline-block;
     top: calc(100% + 10px);
     transform-origin: top left;
+    transform: rotate(30deg);
     white-space: normal;
     overflow-wrap: break-word;
     word-wrap: break-word;
@@ -56,7 +57,7 @@
 
 .completed-label {
     color: gray;
-    transform: rotate(60deg);
+    transform: rotate(30deg);
     transition: color 0.3s, transform 0.3s;
 }
 

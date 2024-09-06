@@ -6,9 +6,11 @@ services:
       context: .
       args:
         DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+    environment:
+      - PYTHONUNBUFFERED=1
     env_file:
       - secrets.env
-    command: python manage.py runserver 0.0.0.0:8000
+    command: daphne -b 0.0.0.0 -p 8000 infoscreen.asgi:application
     volumes:
       - .:/app
       - ./static:/app/static
@@ -46,3 +48,13 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+
+  ansible:
+    build:
+      context: .
+      dockerfile: Dockerfile.ansible
+    command: ansible-playbook -i /app/inventory /app/playbook.yml
+    volumes:
+      - .:/app
+    depends_on:
+      - web

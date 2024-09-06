@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const videoSrc = '/media/video/Tried_Me_Mode.mp4';
     const SYNC_REQUESTS = 10;
     const SYNC_INTERVAL = 60 * 1000;
-    const START_DELAY = 10;
+    const START_DELAY = 2;
 
     async function init() {
         await syncTimeWithServer();
@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
         offsets.sort();
         offsets = offsets.slice(1, -1);
         timeOffset = offsets.reduce((sum, val) => sum + val, 0) / offsets.length;
-        console.log(`Синхронизация времени завершена. Смещение: ${timeOffset} ms`);
     }
 
     function getServerTimeOffset() {
